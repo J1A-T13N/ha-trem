@@ -1,4 +1,4 @@
-import json
+import os, json
 
 import geopandas as gpd
 
@@ -203,8 +203,12 @@ def _group_region_by_city(
     return grouped_regions
 
 
+directory = os.path.dirname(os.path.realpath(__file__))
+region_path = os.path.join(directory, "../asset/region.json")
+country_map_path = os.path.join(directory, "../asset/country_map.json")
+town_map_path = os.path.join(directory, "../asset/town_map.json")
 with open(
-    "/workspaces/core/config/custom_components/trem/asset/region.json",
+    region_path,
     "r",
     encoding="utf-8",
 ) as f:
@@ -212,7 +216,7 @@ with open(
 REGIONS_GROUP_BY_CITY: dict[str, list[RegionLocation]] = _group_region_by_city(REGIONS)
 
 with open(
-    "/workspaces/core/config/custom_components/trem/asset/town_map.json",
+    town_map_path,
     "r",
     encoding="utf-8",
 ) as f:
@@ -224,7 +228,7 @@ with open(
         if d["id"].isdigit()
     }
 with open(
-    "/workspaces/core/config/custom_components/trem/asset/country_map.json",
+    country_map_path,
     "r",
     encoding="utf-8",
 ) as f:

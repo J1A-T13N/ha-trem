@@ -6,7 +6,7 @@ from typing import Final
 DEFAULT_NAME = "Taiwan Real-time Earthquake Monitoring"
 DOMAIN = "trem"
 
-ATTR_ID: Final = "id"
+ATTR_ID: Final = "serial"
 ATTR_AUTHOR: Final = "author"
 ATTR_LNG: Final = "longitude"
 ATTR_LAT: Final = "latitude"
@@ -14,7 +14,9 @@ ATTR_DEPTH: Final = "depth"
 ATTR_MAG: Final = "magnitude"
 ATTR_LOC: Final = "location"
 ATTR_TIME: Final = "time_of_occurrence"
+ATTR_INT: Final = "intensity"
 ATTR_EST: Final = "estimate"
+ATTR_EQDATA: Final = "earthquake_data"
 
 ATTR_LIST = [
     ATTR_ID,
@@ -25,6 +27,7 @@ ATTR_LIST = [
     ATTR_MAG,
     ATTR_LOC,
     ATTR_TIME,
+    ATTR_INT,
     ATTR_EST,
 ]
 
@@ -40,10 +43,14 @@ HA_USER_AGENT = (
 LOGIN_URLS = "https://api.exptech.com.tw/api/v3/et/login"
 
 BASE_URLS = {
-    "tainan_cache": "https://api-1.exptech.com.tw",
-    "taipe_cache": "https://api-2.exptech.com.tw",
-    "taipei": "https://lb-1.exptech.com.tw",
-    "pingtung": "https://lb-2.exptech.com.tw",
+    "tainan_cache_limit": "https://api-1.exptech.com.tw",
+    "tainan_cache": "https://api-1.exptech.dev",
+    "taipe_cache_limit": "https://api-2.exptech.com.tw",
+    "taipe_cache": "https://api-2.exptech.dev",
+    "taipei_limit": "https://lb-1.exptech.com.tw",
+    "taipei": "https://lb-1.exptech.dev",
+    "pingtung_limit": "https://lb-2.exptech.com.tw",
+    "pingtung": "https://lb-2.exptech.dev",
     "taipei_2": "https://lb-3.exptech.com.tw",
     "pingtung_2": "https://lb-4.exptech.com.tw",
 }

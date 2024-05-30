@@ -1,0 +1,24 @@
+simulator:
+  name: Simulator Earthquake
+  description: Simulator Earthquake.
+  fields:
+    earthquake_data:
+      required: true
+      name: Earthquake Data
+      description: Earthquake Data for test
+      example: '[{"author":"cwa","id":"1191299","serial":1,"status":0,"final":0,"eq":{"time":1713779575000,"lon":121.56,"lat":23.78,"depth":10,"mag":7,"loc":"花蓮縣壽豐鄉","max":6},"time":1713779593000}]'
+      selector:
+        text:
+
+reload:
+  name: Reload Earthquake Sensor
+  description: If the error retry limit reached, you can reload it.
+  fields:
+    entity_id:
+      name: Entity
+      description: Earthquake sensor entity.
+      example: "sensor.sweet_home"
+      required: true
+      selector:
+        entity:
+          domain: sensor

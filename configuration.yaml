@@ -1,0 +1,26 @@
+
+# Loads default set of integrations. Do not remove.
+default_config:
+
+# Load frontend themes from the themes folder
+frontend:
+  themes: !include_dir_merge_named themes
+
+automation: !include automations.yaml
+script: !include scripts.yaml
+scene: !include scenes.yaml
+
+
+logger:
+  default: info
+  logs:
+    homeassistant.components.cloud: debug
+    #homeassistant.components.trem: debug
+
+sensor:
+  - platform: trem
+    name: Company # Display name
+    region: 116 # Region Code (Zip Code)
+  - platform: trem
+    name: Sweet Home # Display name
+    region: 231 # Region Code (Zip Code)
