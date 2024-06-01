@@ -63,6 +63,7 @@ See [Region Code](https://raw.githubusercontent.com/ExpTechTW/TREM-tauri/main/sr
 
 - ExpTech Studio `HTTP API`
 - watermelon1024 `Python Function`
+- kukuxx `Collaborator`
 
 <p>在此感謝每一位幫助過我，及社群上的每一位夥伴，不吝給予協助。</p>
 <hr>
