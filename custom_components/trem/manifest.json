@@ -6,7 +6,7 @@
   "config_flow": false,
   "documentation": "https://github.com/J1A-T13N/ha-trem/blob/master/README.md",
   "issue_tracker": "https://github.com/J1A-T13N/ha-trem/issues",
-  "requirements": ["geopandas"],
+  "requirements": ["proj", "matplotlib", "geopandas@git+git://github.com/geopandas/geopandas.git"],
   "iot_class": "cloud_polling",
   "ssdp": [],
   "zeroconf": [],
