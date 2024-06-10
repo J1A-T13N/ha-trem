@@ -15,7 +15,7 @@ logger:
   default: info
   logs:
     homeassistant.components.cloud: debug
-    #homeassistant.components.trem: debug
+    #custom_components.trem: debug
 
 sensor:
   - platform: trem
