@@ -7,7 +7,7 @@ DEFAULT_NAME = "Taiwan Real-time Earthquake Monitoring"
 DOMAIN = "trem"
 
 ATTR_ID: Final = "serial"
-ATTR_AUTHOR: Final = "author"
+ATTR_AUTHOR: Final = "provider"
 ATTR_LNG: Final = "longitude"
 ATTR_LAT: Final = "latitude"
 ATTR_DEPTH: Final = "depth"
@@ -54,3 +54,4 @@ BASE_URLS = {
     "taipei_2": "https://lb-3.exptech.com.tw",
     "pingtung_2": "https://lb-4.exptech.com.tw",
 }
+CONF_NODE: Final = "node"

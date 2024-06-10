@@ -1,21 +1,24 @@
-import io
+import asyncio
 from datetime import datetime
 
-import matplotlib.pyplot as plt
-
 from ..utils import MISSING
-from .location import (
-    COUNTRY_DATA,
-    REGIONS_GROUP_BY_CITY,
-    TOWN_DATA,
-    TOWN_RANGE,
-    EarthquakeLocation,
-    RegionLocation,
+from .location import REGIONS_GROUP_BY_CITY, EarthquakeLocation, RegionLocation
+from .map import Map
+from .model import (
+    Intensity,
+    RegionExpectedIntensity,
+    WaveModel,
+    calculate_expected_intensity_and_travel_time,
+    get_wave_model,
 )
-from .model import Intensity, RegionExpectedIntensity, calculate_expected_intensity_and_travel_time
 
 PROVIDER_DISPLAY = {
     "cwa": "中央氣象署",
+    "trem": "TREM 臺灣即時地震監測",
+    "kam": "기상청 날씨누리",
+    "jma": "気象庁",
+    "nied": "防災科研",
+    "scdzj": "四川省地震局",
 }
 
 
@@ -30,9 +33,13 @@ class EarthquakeData:
         "_depth",
         "_time",
         "_max_intensity",
+        "_model",
+        "_calc_task",
         "_city_max_intensity",
         "_expected_intensity",
-        "_intensity_map",
+        "_p_arrival_distance_interp_func",
+        "_s_arrival_distance_interp_func",
+        "_map",
     )
 
     def __init__(
@@ -62,9 +69,11 @@ class EarthquakeData:
         self._depth = depth
         self._time = time
         self._max_intensity = max_intensity
+        self._model = get_wave_model(depth)
+        self._calc_task: asyncio.Future = None
         self._city_max_intensity: dict[str, RegionExpectedIntensity] = None
         self._expected_intensity: dict[int, RegionExpectedIntensity] = None
-        self._intensity_map: io.BytesIO = None
+        self._map: Map = Map(self)
 
     @property
     def location(self) -> EarthquakeLocation:
@@ -116,18 +125,32 @@ class EarthquakeData:
         return self._max_intensity
 
     @property
+    def wave_model(self) -> WaveModel:
+        """
+        The wave model of the earthquake.
+        """
+        return self._model
+
+    @property
+    def expected_intensity(self) -> dict[int, RegionExpectedIntensity]:
+        """
+        The expected intensity of the earthquake (if have been calculated).
+        """
+        return self._expected_intensity
+
+    @property
     def city_max_intensity(self) -> dict[str, RegionExpectedIntensity]:
         """
-        The maximum intensity of the earthquake in each city.
+        The maximum intensity of the earthquake in each city (if have been calculated).
         """
         return self._city_max_intensity
 
     @property
-    def intensity_map(self) -> io.BytesIO:
+    def map(self) -> Map:
         """
-        The intensity map of the earthquake.
+        The intensity map object of the earthquake (if have been calculated).
         """
-        return self._intensity_map
+        return self._map
 
     @classmethod
     def from_dict(cls, data: dict) -> "EarthquakeData":
@@ -153,76 +176,40 @@ class EarthquakeData:
         """
         Calculate the expected intensity of the earthquake.
         """
-        self._expected_intensity = calculate_expected_intensity_and_travel_time(self, regions)
-        return self._expected_intensity
-
-    @property
-    def expected_intensity(self) -> dict[int, RegionExpectedIntensity]:
-        """
-        The expected intensity of the earthquake.
-        Format: {region_id: RegionExpectedIntensity, ...}
-        """
-        if self._expected_intensity is None:
-            self.calc_expected_intensity()
-        return self._expected_intensity
-
-    def draw_map(self):
-        """
-        Draw the map of the earthquake.
-        """
-        if self._expected_intensity is None:
-            self.calc_expected_intensity()
-
-        fig, ax = plt.subplots(figsize=(4, 6))
-        ax: plt.Axes
-        fig.patch.set_alpha(0)
-        ax.set_axis_off()
-        # map boundary
-        boundary_multiplier = 1  # TODO: change accdoring to mag
-        mid_lon, mid_lat = (121 + self.lon) / 2, (24 + self.lat) / 2
-        lon_boundary, lat_boundary = 1.6 * boundary_multiplier, 2.4 * boundary_multiplier
-        min_lon, max_lon = mid_lon - lon_boundary, mid_lon + lon_boundary
-        min_lat, max_lat = mid_lat - lat_boundary, mid_lat + lat_boundary
-        ax.set_xlim(min_lon, max_lon)
-        ax.set_ylim(min_lat, max_lat)
-        TOWN_DATA.plot(ax=ax, color="lightgrey", edgecolor="black", linewidth=0.22 / boundary_multiplier)
-        for code, region in self._expected_intensity.items():
-            if region.intensity.value > 0:
-                TOWN_RANGE[code].plot(ax=ax, color=region.intensity.color)
-        COUNTRY_DATA.plot(ax=ax, edgecolor="black", facecolor="none", linewidth=0.64 / boundary_multiplier)
-        # draw epicentre
-        ax.scatter(
-            self.lon,
-            self.lat,
-            marker="x",
-            color="red",
-            s=160 / boundary_multiplier,
-            linewidths=2.5 / boundary_multiplier,
-        )
-        _map = io.BytesIO()
-        fig.savefig(_map, format="png", bbox_inches="tight")
-        _map.seek(0)
-        self._intensity_map = _map
-        # fig.savefig("image.png", bbox_inches="tight")
-        return _map
-
-    def calc_city_max_intensity(self) -> dict[str, RegionExpectedIntensity]:
-        """
-        The maximum intensity of the earthquake in the every city.
-        """
-        if self._expected_intensity is None:
-            self.calc_expected_intensity()
-        if self._city_max_intensity is not None:
-            return self._city_max_intensity
-
+        intensities = calculate_expected_intensity_and_travel_time(self, regions)
+        self._expected_intensity = dict(intensities)
         self._city_max_intensity = {
-            city: max(
-                (self._expected_intensity[region.code] for region in regions),
-                key=lambda x: x.intensity._float_value,
-            )
+            city: max(city_intensities, key=lambda x: x.intensity._float_value)
             for city, regions in REGIONS_GROUP_BY_CITY.items()
+            if (
+                city_intensities := [
+                    intensity
+                    for region in regions
+                    if (intensity := self._expected_intensity.get(region.code))
+                ]
+            )
         }
-        return self._city_max_intensity
+        return self._expected_intensity
+
+    def calc_all_data(self):
+        try:
+            self.calc_expected_intensity()
+            self.map.draw()
+        except asyncio.CancelledError:
+            self._map._drawn = False
+            pass
+        except Exception:
+            self._calc_task.cancel()
+        finally:
+            pass
+
+    def calc_all_data_in_executor(self, loop: asyncio.AbstractEventLoop):
+        if self._calc_task is None:
+            self._calc_task = loop.run_in_executor(None, self.calc_all_data)
+        return self._calc_task
+
+    async def wait_until_intensity_calculated(self):
+        await self._calc_task
 
 
 class Provider:
@@ -261,7 +248,7 @@ class EEW:
     Represents an earthquake early warning event.
     """
 
-    __solts__ = ("_id", "_serial", "_final", "_earthquake", "_provider", "_time")
+    __slots__ = ("_id", "_serial", "_final", "_earthquake", "_provider", "_time")
 
     def __init__(
         self,

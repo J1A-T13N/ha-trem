@@ -1,4 +1,5 @@
 import os, json
+from typing import Union
 
 import geopandas as gpd
 
@@ -183,7 +184,7 @@ class RegionLocation(Location):
 
 
 def _parse_region_dict(
-    data: dict[str, dict[str, dict[str, int | float | str]]],
+    data: dict[str, dict[str, dict[str, Union[int, float, str]]]],
 ) -> dict[int, RegionLocation]:
     all_regions = {}
     for city, regions in data.items():
@@ -203,10 +204,11 @@ def _group_region_by_city(
     return grouped_regions
 
 
+TAIWAN_CENTER = Location(120.982025, 23.973875)
+"The center of Tawian"
+
 directory = os.path.dirname(os.path.realpath(__file__))
 region_path = os.path.join(directory, "../asset/region.json")
-country_map_path = os.path.join(directory, "../asset/country_map.json")
-town_map_path = os.path.join(directory, "../asset/town_map.json")
 with open(
     region_path,
     "r",
@@ -215,6 +217,7 @@ with open(
     REGIONS: dict[int, RegionLocation] = _parse_region_dict(json.load(f))
 REGIONS_GROUP_BY_CITY: dict[str, list[RegionLocation]] = _group_region_by_city(REGIONS)
 
+town_map_path = os.path.join(directory, "../asset/town_map.json")
 with open(
     town_map_path,
     "r",
@@ -227,6 +230,8 @@ with open(
         for d in _raw_geo_data
         if d["id"].isdigit()
     }
+
+country_map_path = os.path.join(directory, "../asset/country_map.json")
 with open(
     country_map_path,
     "r",
