@@ -3,7 +3,6 @@
 from datetime import timedelta
 from typing import Final
 
-DEFAULT_NAME = "Taiwan Real-time Earthquake Monitoring"
 DOMAIN = "trem"
 
 ATTR_ID: Final = "serial"
@@ -31,6 +30,7 @@ ATTR_LIST = [
     ATTR_EST,
 ]
 
+DEFAULT_FRIENDLY_NAME = "Taiwan Real-time Earthquake Monitoring"
 DEFAULT_SCAN_INTERVAL = timedelta(seconds=5)
 
 ATTRIBUTION = "Powered by ExpTech Studio"
@@ -55,3 +55,4 @@ BASE_URLS = {
     "pingtung_2": "https://lb-4.exptech.com.tw",
 }
 CONF_NODE: Final = "node"
+CONF_KEEP_ALIVE: Final = "keep_alive"
