@@ -14,7 +14,7 @@ from homeassistant.components.sensor import (
     PLATFORM_SCHEMA,
     SensorEntity,
 )
-from homeassistant.const import ATTR_ATTRIBUTION, CONF_NAME, CONF_REGION
+from homeassistant.const import ATTR_ATTRIBUTION, CONF_FRIENDLY_NAME, CONF_REGION
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.typing import ConfigType, DiscoveryInfoType
@@ -31,11 +31,12 @@ from .const import (
     ATTR_EST,
     ATTR_INT,
     ATTR_LIST,
-    DEFAULT_NAME,
+    DEFAULT_FRIENDLY_NAME,
     DEFAULT_SCAN_INTERVAL,
     HA_USER_AGENT,
     BASE_URLS,
     CONF_NODE,
+    CONF_KEEP_ALIVE,
     DEFAULT_ICON,
 )
 
@@ -48,9 +49,10 @@ SCAN_INTERVAL = DEFAULT_SCAN_INTERVAL
 
 PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
     {
-        vol.Optional(CONF_NAME, default=DEFAULT_NAME): cv.string,
-        vol.Optional(CONF_NODE, default=None): cv.string,
         vol.Required(CONF_REGION): cv.string,
+        vol.Optional(CONF_FRIENDLY_NAME, default=DEFAULT_FRIENDLY_NAME): cv.string,
+        vol.Optional(CONF_NODE, default=""): cv.string,
+        vol.Optional(CONF_KEEP_ALIVE, default=False): cv.boolean,
     }
 )
 
@@ -65,9 +67,10 @@ def setup_platform(
     add_entities(
         [
             TremSensor(
-                name=config[CONF_NAME],
-                node=config[CONF_NODE],
                 region=config[CONF_REGION],
+                friendly_name=config[CONF_FRIENDLY_NAME],
+                node=config[CONF_NODE],
+                keep_alive=config[CONF_KEEP_ALIVE],
             )
         ],
         True,
@@ -75,7 +78,13 @@ def setup_platform(
 
 
 class TremSensor(SensorEntity):
-    def __init__(self, name: str, node: str, region: int):
+    def __init__(self, region: str, friendly_name: str, node: str, keep_alive: bool):
+        self._region = int(region)
+        self._friendly_name = (
+            f"{friendly_name} ({region})"
+            if friendly_name == DEFAULT_FRIENDLY_NAME
+            else friendly_name
+        )
         if node in BASE_URLS:
             station = node
             base_url = BASE_URLS[node]
@@ -85,19 +94,23 @@ class TremSensor(SensorEntity):
         else:
             station, base_url = random.choice(list(BASE_URLS.items()))
         self._station = station
-        self._name = name
-        self._region = int(region)
-        # self._token = token
-        self._state = None
-        self._attr_value = {}
         self._base_url = (
             node
             if station == "User designate"
             else f"{base_url}/api/v1/eq/eew?type=cwa"
         )
+        self._retry = 0
+        # self._token = token
+
         self._eew = None
         self._simulator = None
-        self._retry = 0
+
+        self._state = 0
+        self._attr_value = {}
+        for i in ATTR_LIST:
+            self._attr_value[i] = ""
+        self._keep_alive = keep_alive
+
         _LOGGER.debug(
             f"Fetching data from HTTP API ({self._station}), EEW({self._region}) Monitoring..."
         )
@@ -179,20 +192,25 @@ class TremSensor(SensorEntity):
                 )
                 self._attr_value[ATTR_EST] = earthquakeEst if earthquakeEst > 0 else 0
             else:
-                self._attr_value = {}
-                for i in ATTR_LIST:
-                    self._attr_value[i] = ""
-                self._state = 0
+                self._attr_value[ATTR_EST] = 0
+
+            if self._keep_alive:
+                return
+
+            self._attr_value = {}
+            for i in ATTR_LIST:
+                self._attr_value[i] = ""
+            self._state = 0
         except Exception as ex:
             self._retry = self._retry + 1
             _LOGGER.error(
-                f"Unable to get data from HTTP API (%s), Retry {self._retry}/5...",
+                f"({self._station}) Unable to get data from HTTP API, %s, Retry {self._retry}/5...",
                 repr(ex),
             )
 
     @property
     def name(self):
-        return self._name
+        return self._friendly_name
 
     @property
     def state(self):
@@ -204,7 +222,7 @@ class TremSensor(SensorEntity):
 
     @property
     def unique_id(self):
-        alias = self._name.replace(" ", "_")
+        alias = self._friendly_name.replace(" ", "_")
         return f"trem_{alias}"
 
     @property
