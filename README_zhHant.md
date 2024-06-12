@@ -68,11 +68,12 @@
 ```yaml
 sensor:
   - platform: trem
-    name: Company # 顯示名稱
+    friendly_name: Company # 顯示名稱
     region: 116 # 示警地區
   - platform: trem
-    name: Sweet Home # 顯示名稱
+    friendly_name: Sweet Home # 顯示名稱
     region: 231 # 示警地區
+    keep_alive: True # 保留示警記錄
 ```
 **:zap: 請記得重啟 Home Assistant. :zap:**
 

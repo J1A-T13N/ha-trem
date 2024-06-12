@@ -67,10 +67,11 @@ Configure your name and region, in `config/configuration.yaml`.
 ```yaml
 sensor:
   - platform: trem
-    name: Company # Display name
+    friendly_name: Company # Display name
     region: 116 # Region Code (Zip Code)
   - platform: trem
-    name: Sweet Home # Display name
+    friendly_name: Sweet Home # Display name
+    keep_alive: True
     region: 231 # Region Code (Zip Code)
 ```
 **:zap: Remember restart Home Assistant. :zap:**
