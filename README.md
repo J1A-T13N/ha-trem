@@ -78,6 +78,11 @@ sensor:
     keep_alive: True
     region: 231 # Region Code (Zip Code)
 ```
+> [!TIP]
+> This configuration is suitable for v0.0.2 and above versions<br>
+> Release v0.0.1 Please change friendly_name back to name.
+<br>
+
 **:zap: Remember restart Home Assistant. :zap:**
 
 *An example of `configuration.yaml` can be found [here](configuration.yaml).*<br>
