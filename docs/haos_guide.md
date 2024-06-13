@@ -31,8 +31,8 @@ mount -o loop -t ext4 /usr/tmp-disk /tmp
 pip --no-cache-dir install geopandas==0.14.4 matplotlib==3.9.0 scipy==1.12.0 obspy==1.4.0
 ```
 > [!TIP]
-> Releases: v0.0.1 No installation required: <br>
-> apk: gfortran openblas-dev linux-headers
+> Releases v0.0.1 No installation required: <br>
+> apk: gfortran openblas-dev linux-headers <br>
 > pip: scipy==1.12.0 obspy==1.4.0
 
 ![image](https://github.com/J1A-T13N/ha-trem/assets/29163857/b207f304-65bd-4ed2-aefb-60caf51f412c)
@@ -57,8 +57,8 @@ mount -o loop -t ext4 /usr/tmp-disk /tmp
 pip --no-cache-dir install geopandas==0.14.4 matplotlib==3.9.0 scipy==1.12.0 obspy==1.4.0
 ```
 > [!TIP]
-> Releases: v0.0.1 No installation required: <br>
-> apk: gfortran openblas-dev linux-headers
+> Releases v0.0.1 No installation required: <br>
+> apk: gfortran openblas-dev linux-headers <br>
 > pip: scipy==1.12.0 obspy==1.4.0
 
 4. If everything is successfully, [Continue configuration the integration](../README.md#config).
