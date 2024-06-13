@@ -17,6 +17,10 @@
 
 [English](README.md) | 繁體中文<br>
 
+> [!IMPORTANT]
+> 這個自訂元件安裝方法較為困難<br>
+> 適合管理 Linux 系統專家才能安裝
+
 
 ## 預覽
 

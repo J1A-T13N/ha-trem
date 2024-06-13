@@ -15,11 +15,11 @@ docker exec -it homeassistant bash
 ![image](https://github.com/J1A-T13N/ha-trem/assets/29163857/36748f45-03c1-4f3e-814e-cd54167606b7)
 7. Copy and paste into the Terminal to install the dependencies
 ```bash
-apk add --no-cache e2fsprogs musl-dev gdal-dev proj-dev proj-util gcc g++
+apk add --no-cache e2fsprogs musl-dev gdal-dev proj-dev proj-util gcc g++ gfortran openblas-dev
 fallocate -l 1G /usr/tmp-disk
 mkfs.ext4 /usr/tmp-disk
 mount -o loop -t ext4 /usr/tmp-disk /tmp
-pip --no-cache-dir install geopandas==0.14.4 matplotlib==3.9.0
+pip --no-cache-dir install geopandas==0.14.4 matplotlib==3.9.0 obspy==1.4.0
 ```
 ![image](https://github.com/J1A-T13N/ha-trem/assets/29163857/b207f304-65bd-4ed2-aefb-60caf51f412c)
 8. If everything is successfully, [Continue configuration the integration](../README.md#config).
@@ -36,11 +36,11 @@ pip --no-cache-dir install geopandas==0.14.4 matplotlib==3.9.0
 2. Go inside the container with docker exec -it homeassistant bash (or similar)
 3. Copy and paste into the Terminal to install the dependencies
 ```bash
-apk add --no-cache e2fsprogs musl-dev gdal-dev proj-dev proj-util gcc g++
+apk add --no-cache e2fsprogs musl-dev gdal-dev proj-dev proj-util gcc g++ gfortran openblas-dev
 fallocate -l 1G /usr/tmp-disk
 mkfs.ext4 /usr/tmp-disk
 mount -o loop -t ext4 /usr/tmp-disk /tmp
-pip --no-cache-dir install geopandas==0.14.4 matplotlib==3.9.0
+pip --no-cache-dir install geopandas==0.14.4 matplotlib==3.9.0 obspy==1.4.0
 ```
 4. If everything is successfully, [Continue configuration the integration](../README.md#config).
 

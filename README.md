@@ -16,6 +16,10 @@
 
 English | [繁體中文](README_zhHant.md)<br>
 
+> [!IMPORTANT]
+> This custom component installation is considered advanced<br>
+> should only be used if one is an expert in managing a Linux operating system.
+
 
 ## Screenshots
 
