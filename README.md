@@ -67,7 +67,7 @@ English | [繁體中文](README_zhHant.md)<br>
 
 
 ## Config
-Configure your name and region, in `config/configuration.yaml`.
+
 ```yaml
 sensor:
   - platform: trem
@@ -80,13 +80,25 @@ sensor:
 ```
 > [!TIP]
 > This configuration is suitable for v0.0.2 and above versions<br>
-> Release v0.0.1 Please change friendly_name back to name.
+> Release v0.0.1 Please change `friendly_name` back to `name`.
 <br>
 
 **:zap: Remember restart Home Assistant. :zap:**
 
+<hr>
+<br>
+
+
+## Options
+
+| Name                  | Type             | Requirement  | Description                                                                                                                                                                                                                       | Default   |
+| --------------------- | ---------------- | ------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------- |
+| region                | string           | **Required** | Region Code can be found [here](https://github.com/ExpTechTW/TREM-tauri/blob/main/src/assets/json/region.json)                                                                                                                    |           |
+| friendly_name         | string           | **Optional** | you want to display the name on Home Assistant                                                                                                                                                                                    | `Taiwan Real-time Earthquake Monitoring`      |
+| keep_alive            | boolean          | **Optional** | Keep recent alert data                                                                                                                                                                                                            | `false` |
+
 *An example of `configuration.yaml` can be found [here](configuration.yaml).*<br>
-*Region Code can be found [here](https://github.com/ExpTechTW/TREM-tauri/blob/main/src/assets/json/region.json).*
+
 <hr>
 <br>
 

@@ -68,7 +68,7 @@
 
 
 ## 設定
-於 `config/configuration.yaml` 中，設定name(顯示名稱)及region(示警地區)。
+
 ```yaml
 sensor:
   - platform: trem
@@ -86,8 +86,19 @@ sensor:
 
 **:zap: 請記得重啟 Home Assistant. :zap:**
 
+<hr>
+<br>
+
+
+## 選項
+| Name                  | Type             | Requirement  | Description                                                                                                                                                                                                                       | Default   |
+| --------------------- | ---------------- | ------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------- |
+| region                | string           | **Required** | 示警地區代號可[在此處](https://github.com/ExpTechTW/TREM-tauri/blob/main/src/assets/json/region.json)查詢                                                                                                                             |           |
+| friendly_name         | string           | **Optional** | 您想顯示的名稱                                                                                                                                                                                                                      | `Taiwan Real-time Earthquake Monitoring`      |
+| keep_alive            | boolean          | **Optional** | 保留最近的示警資料                                                                                                                                                                                                                   | `false` |
+
 *`configuration.yaml` 示範檔案可[在此處](configuration.yaml)查看。*<br>
-*示警地區代號可[在此處](https://github.com/ExpTechTW/TREM-tauri/blob/main/src/assets/json/region.json)查詢。*
+
 <hr>
 <br>
 
