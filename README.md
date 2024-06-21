@@ -100,35 +100,13 @@ sensor:
 
 ## Options
 
-| Name          | Type    | Requirement  | Description                                                                                                                                                   | Default                                  |
-| ------------- | ------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------- |
-| region        | string  | **Required** | Region Code can be found [here](https-//github.com/ExpTechTW/TREM-tauri/blob/main/src/assets/json/region.json)                                                |                                          |
-| friendly_name | string  | *Optional*   | you want to display the name on Home Assistant                                                                                                                | `Taiwan Real-time Earthquake Monitoring` |
-| keep_alive    | boolean | *Optional*   | Keep recent alert data                                                                                                                                        | `false`                                  |
-| node          | string  | *Optional*   | See [API Node](https://github.com/J1A-T13N/ha-trem?tab=readme-ov-file#api-node), or using self server<br> (etc. http://127.0.0.1:8000/api/v1/eq/eew?type=cwa) |                                          |
+| Name                  | Type             | Requirement  | Description                                                                                                                                                                                                                       | Default   |
+| --------------------- | ---------------- | ------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------- |
+| region                | string           | **Required** | Region Code can be found [here](https://github.com/ExpTechTW/TREM-tauri/blob/main/src/assets/json/region.json)                                                                                                                    |           |
+| friendly_name         | string           | **Optional** | you want to display the name on Home Assistant                                                                                                                                                                                    | `Taiwan Real-time Earthquake Monitoring`      |
+| keep_alive            | boolean          | **Optional** | Keep recent alert data                                                                                                                                                                                                            | `false` |
 
 *An example of `configuration.yaml` can be found [here](configuration.yaml).*<br>
-
-<hr>
-<br>
-
-
-## API Node
-
-| Node               | Description                                 |
-| :----------------: | :-----------------------------------------: |
-| tainan_cache_limit | The number of requests is limited           |
-| tainan_cache       | Available to all users                      |
-| taipe_cache_limit  | The number of requests is limited           |
-| taipe_cache        | Available to all users                      |
-| taipei_limit       | The number of requests is limited           |
-| taipei             | The data is real-time but the load is high  |
-| taipei_2           | The data is real-time but the load is high  |
-| pingtung_limit     | The number of requests is limited           |
-| pingtung           | The data is real-time but the load is high  |
-| pingtung_2         | The data is real-time but the load is high  |
-
-*An API server can be monitored [here](https://status.exptech.dev/).*<br>
 
 <hr>
 <br>

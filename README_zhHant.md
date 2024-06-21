@@ -99,36 +99,13 @@ sensor:
 
 
 ## 選項
-
-| Name          | Type    | Requirement  | Description                                                                                                                                         | Default                                  |
-| ------------- | ------- | ------------ | --------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------- |
-| region        | string  | **Required** | 示警地區代號可[在此處](https://github.com/ExpTechTW/TREM-tauri/blob/main/src/assets/json/region.json)查詢                                               |                                          |
-| friendly_name | string  | *Optional*   | 您想顯示的名稱　　                                                                                                                                     | `Taiwan Real-time Earthquake Monitoring` |
-| keep_alive    | boolean | *Optional*   | 保留最近的示警資料                                                                                                                                     | `false`                                  |
-| node          | string  | *Optional*   | [在此處](https://github.com/J1A-T13N/ha-trem?tab=readme-ov-file#api-node)查詢 , 或使用自定伺服器<br> (例如 http://127.0.0.1:8000/api/v1/eq/eew?type=cwa) |                                          |
+| Name                  | Type             | Requirement  | Description                                                                                                                                                                                                                       | Default   |
+| --------------------- | ---------------- | ------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------- |
+| region                | string           | **Required** | 示警地區代號可[在此處](https://github.com/ExpTechTW/TREM-tauri/blob/main/src/assets/json/region.json)查詢                                                                                                                             |           |
+| friendly_name         | string           | **Optional** | 您想顯示的名稱                                                                                                                                                                                                                      | `Taiwan Real-time Earthquake Monitoring`      |
+| keep_alive            | boolean          | **Optional** | 保留最近的示警資料                                                                                                                                                                                                                   | `false` |
 
 *`configuration.yaml` 示範檔案可[在此處](configuration.yaml)查看。*<br>
-
-<hr>
-<br>
-
-
-## 可用節點
-
-| Node               | Description                                 |
-| :----------------: | :-----------------------------------------: |
-| tainan_cache_limit | 請求次數遭到限制      |
-| tainan_cache       | 適合所有使用者　      |
-| taipe_cache_limit  | 請求次數遭到限制      |
-| taipe_cache        | 適合所有使用者　      |
-| taipei_limit       | 請求次數遭到限制      |
-| taipei             | 資料最即時，但延遲較高 |
-| taipei_2           | 資料最即時，但延遲較高 |
-| pingtung_limit     | 請求次數遭到限制      |
-| pingtung           | 資料最即時，但延遲較高 |
-| pingtung_2         | 資料最即時，但延遲較高 |
-
-*[在此處](https://status.exptech.dev/)可以查看伺服器狀態。*<br>
 
 <hr>
 <br>
