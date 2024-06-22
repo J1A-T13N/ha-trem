@@ -21,6 +21,7 @@ sensor:
   - platform: trem
     friendly_name: Company # Display name
     region: 116 # Region Code (Zip Code)
+    #node: http://127.0.0.1:8000/api/v1/eq/eew?type=cwa
   - platform: trem
     friendly_name: Sweet Home # Display name
     keep_alive: True

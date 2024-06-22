@@ -14,12 +14,7 @@
 [![Project Maintenance][maintenance2-shield]][user2_profile]
 <hr>
 
-
 [English](README.md) | 繁體中文<br>
-
-> [!IMPORTANT]
-> 這個自訂元件安裝方法較為困難<br>
-> 適合管理 Linux 系統專家才能安裝
 
 
 ## 預覽
@@ -32,23 +27,35 @@
 
 ## 測試結果
 
-| 環境 | Home Assistant OS[^1] | Home Assistant Core | Home Assistant Supervisor |
+| 環境 | Home Assistant OS | Home Assistant Core | Home Assistant Supervisor |
 | :------------: | :------------: | :------------: | :------------: |
-| Virtual Machine[^2] | :heavy_check_mark: |  |  |
-| Container |  | :heavy_check_mark: | :question:[^3] |
+| Virtual Machine[^1] | :heavy_check_mark: |  |  |
+| Container |  | :heavy_check_mark: | :question:[^2] |
 | Virtual Environment |  | :heavy_check_mark: |  |
-| Physics Machine[^4] | :question:[^5] | :heavy_minus_sign:[^6] | :question:[^3] |
+| Physics Machine[^3] | :question:[^4] | :heavy_minus_sign:[^5] | :question:[^2] |
 
 :heavy_check_mark: 測試通過<br>
 :heavy_multiplication_x: 無法安裝<br>
 :question: 尚未測試<br>
 :heavy_minus_sign: 請看備註<br>
-[^1]: Home Assistant OS 暫存(tmp)目錄被掛載 noexec 導致無法編譯, 您可以透過此 [解決辦法](https://github.com/home-assistant/core/issues/118717) 在容器內安裝所需套件。
-[^2]: 虛擬機包括但不限: VirtualBox、Unraid、KVM/Proxmox、UTM...等。
-[^3]: 如果您是按照[該方式](https://github.com/home-assistant/supervised-installer)安裝。
-[^4]: 實體機包括但不限: Raspberry Pi、Home Assistant Green、Home Assistant Yellow...等。
-[^5]: 到目前為止, 僅 Raspberry Pi 4 通過測試。
-[^6]: 如果你有其他安裝環境, 可以協助測試並提供回饋。
+[^1]: 虛擬機包括但不限: VirtualBox、Unraid、KVM/Proxmox、UTM...等。
+[^2]: 如果您是按照[該方式](https://github.com/home-assistant/supervised-installer)安裝。
+[^3]: 實體機包括但不限: Raspberry Pi、Home Assistant Green、Home Assistant Yellow...等。
+[^4]: 到目前為止, 僅 rpi4 4GB 通過測試。
+[^5]: 如果你有其他安裝環境, 可以協助測試並提供回饋。
+
+<hr>
+<br>
+
+
+## 先決條件 (如果您使用的是 HAOS)
+**請閱讀[指南](docs/haos_guide.md)來安裝必要套件.**
+
+> [!IMPORTANT]
+> 這個自訂元件安裝方法較為困難<br>
+> 適合管理 Linux 系統專家才能安裝
+
+> Home Assistant OS 暫存(tmp)目錄被掛載 noexec 導致無法編譯, 我們已找到 [解決辦法](https://github.com/home-assistant/core/issues/118717) 修復該問題。
 
 <hr>
 <br>
@@ -74,6 +81,7 @@ sensor:
   - platform: trem
     friendly_name: Company # 顯示名稱
     region: 116 # 示警地區
+	#node: http://127.0.0.1:8000/api/v1/eq/eew?type=cwa
   - platform: trem
     friendly_name: Sweet Home # 顯示名稱
     region: 231 # 示警地區
@@ -91,11 +99,13 @@ sensor:
 
 
 ## 選項
-| Name                  | Type             | Requirement  | Description                                                                                                                                                                                                                       | Default   |
-| --------------------- | ---------------- | ------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------- |
-| region                | string           | **Required** | 示警地區代號可[在此處](https://github.com/ExpTechTW/TREM-tauri/blob/main/src/assets/json/region.json)查詢                                                                                                                             |           |
-| friendly_name         | string           | **Optional** | 您想顯示的名稱                                                                                                                                                                                                                      | `Taiwan Real-time Earthquake Monitoring`      |
-| keep_alive            | boolean          | **Optional** | 保留最近的示警資料                                                                                                                                                                                                                   | `false` |
+
+| Name          | Type    | Requirement  | Description                                                                                                                                         | Default                                  |
+| ------------- | ------- | ------------ | --------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------- |
+| region        | string  | **Required** | 示警地區代號可[在此處](https://github.com/ExpTechTW/TREM-tauri/blob/main/src/assets/json/region.json)查詢                                               |                                          |
+| friendly_name | string  | *Optional*   | 您想顯示的名稱　　                                                                                                                                     | `Taiwan Real-time Earthquake Monitoring` |
+| keep_alive    | boolean | *Optional*   | 保留最近的示警資料                                                                                                                                     | `false`                                  |
+| node          | string  | *Optional*   | [在此處](https://github.com/J1A-T13N/ha-trem?tab=readme-ov-file#api-node)查詢 , 或使用自定伺服器<br> (例如 http://127.0.0.1:8000/api/v1/eq/eew?type=cwa) |                                          |
 
 *`configuration.yaml` 示範檔案可[在此處](configuration.yaml)查看。*<br>
 
@@ -103,10 +113,30 @@ sensor:
 <br>
 
 
+## 可用節點
+
+| Node               | Description                                 |
+| :----------------: | :-----------------------------------------: |
+| tainan_cache_limit | 請求次數遭到限制      |
+| tainan_cache       | 適合所有使用者　      |
+| taipe_cache_limit  | 請求次數遭到限制      |
+| taipe_cache        | 適合所有使用者　      |
+| taipei_limit       | 請求次數遭到限制      |
+| taipei             | 資料最即時，但延遲較高 |
+| taipei_2           | 資料最即時，但延遲較高 |
+| pingtung_limit     | 請求次數遭到限制      |
+| pingtung           | 資料最即時，但延遲較高 |
+| pingtung_2         | 資料最即時，但延遲較高 |
+
+*[在此處](https://status.exptech.dev/)可以查看伺服器狀態。*<br>
+
+<hr>
+<br>
+
+
 ## 已知問題
 
-1. 無法安裝必要套件問題已解決, 請查看[指南](docs/haos_guide.md)安裝。
-2. 無法透過服務(homeassistant.reload_config_entry)重新載入。
+1. 無法透過服務(homeassistant.reload_config_entry)重新載入。
 
 <hr>
 <br>
@@ -119,6 +149,7 @@ sensor:
 - kukuxx `解決辦法提供者`
 
 <p>在此感謝每一位幫助過我，及社群上的每一位夥伴，不吝給予協助。</p>
+
 <hr>
 <br>
 

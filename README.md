@@ -16,10 +16,6 @@
 
 English | [繁體中文](README_zhHant.md)<br>
 
-> [!IMPORTANT]
-> This custom component installation is considered advanced<br>
-> should only be used if one is an expert in managing a Linux operating system.
-
 
 ## Screenshots
 
@@ -31,23 +27,35 @@ English | [繁體中文](README_zhHant.md)<br>
 
 ## Available
 
-| Environment | Home Assistant OS[^1] | Home Assistant Core | Home Assistant Supervisor |
+| Environment | Home Assistant OS | Home Assistant Core | Home Assistant Supervisor |
 | :------------: | :------------: | :------------: | :------------: |
-| Virtual Machine[^2] | :heavy_check_mark: |  |  |
-| Container |  | :heavy_check_mark: | :question:[^3] |
+| Virtual Machine[^1] | :heavy_check_mark: |  |  |
+| Container |  | :heavy_check_mark: | :question:[^2] |
 | Virtual Environment |  | :heavy_check_mark: |  |
-| Physics Machine[^4] | :question:[^5] | :heavy_minus_sign:[^6] | :question:[^3] |
+| Physics Machine[^3] | :question:[^4] | :heavy_minus_sign:[^5] | :question:[^2] |
 
 :heavy_check_mark: Available<br>
 :heavy_multiplication_x: Unavailable<br>
 :question: Untested<br>
 :heavy_minus_sign: See footnotes<br>
-[^1]: /tmp is mounted noexec on HAOS so it can't compile, A [workaround](https://github.com/home-assistant/core/issues/118717) is to do this inside the container.
-[^2]: Virtual Machine may include but not limited to: VirtualBox、Unraid、KVM/Proxmox、UTM...etc.
-[^3]: If your installation method is [it](https://github.com/home-assistant/supervised-installer).
-[^4]: Physics Machine may include but not limited to: Raspberry Pi、Home Assistant Green、Home Assistant Yellow...etc.
-[^5]: So far, only known raspberry pi 4 is available.
-[^6]: If your installation method on other systems, Hope you can provide feedback.
+[^1]: Virtual Machine may include but not limited to: VirtualBox、Unraid、KVM/Proxmox、UTM...etc.
+[^2]: If your installation method is [it](https://github.com/home-assistant/supervised-installer).
+[^3]: Physics Machine may include but not limited to: Raspberry Pi、Home Assistant Green、Home Assistant Yellow...etc.
+[^4]: So far, only known rpi4 4GB is available.
+[^5]: If your installation method on other systems, Hope you can provide feedback.
+
+<hr>
+<br>
+
+
+## Prerequisite (if you're using HAOS)
+**Manual install dependencies see [here](docs/haos_guide.md).**
+
+> [!IMPORTANT]
+> This custom component installation is considered advanced<br>
+> should only be used if one is an expert in managing a Linux operating system.
+
+> /tmp is mounted noexec on HAOS so it can't compile, A [workaround](https://github.com/home-assistant/core/issues/118717) is to do this inside the container.
 
 <hr>
 <br>
@@ -73,6 +81,7 @@ sensor:
   - platform: trem
     friendly_name: Company # Display name
     region: 116 # Region Code (Zip Code)
+	#node: http://127.0.0.1:8000/api/v1/eq/eew?type=cwa
   - platform: trem
     friendly_name: Sweet Home # Display name
     keep_alive: True
@@ -91,11 +100,12 @@ sensor:
 
 ## Options
 
-| Name                  | Type             | Requirement  | Description                                                                                                                                                                                                                       | Default   |
-| --------------------- | ---------------- | ------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------- |
-| region                | string           | **Required** | Region Code can be found [here](https://github.com/ExpTechTW/TREM-tauri/blob/main/src/assets/json/region.json)                                                                                                                    |           |
-| friendly_name         | string           | **Optional** | you want to display the name on Home Assistant                                                                                                                                                                                    | `Taiwan Real-time Earthquake Monitoring`      |
-| keep_alive            | boolean          | **Optional** | Keep recent alert data                                                                                                                                                                                                            | `false` |
+| Name          | Type    | Requirement  | Description                                                                                                                                                   | Default                                  |
+| ------------- | ------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------- |
+| region        | string  | **Required** | Region Code can be found [here](https-//github.com/ExpTechTW/TREM-tauri/blob/main/src/assets/json/region.json)                                                |                                          |
+| friendly_name | string  | *Optional*   | you want to display the name on Home Assistant                                                                                                                | `Taiwan Real-time Earthquake Monitoring` |
+| keep_alive    | boolean | *Optional*   | Keep recent alert data                                                                                                                                        | `false`                                  |
+| node          | string  | *Optional*   | See [API Node](https://github.com/J1A-T13N/ha-trem?tab=readme-ov-file#api-node), or using self server<br> (etc. http://127.0.0.1:8000/api/v1/eq/eew?type=cwa) |                                          |
 
 *An example of `configuration.yaml` can be found [here](configuration.yaml).*<br>
 
@@ -103,10 +113,30 @@ sensor:
 <br>
 
 
+## API Node
+
+| Node               | Description                                 |
+| :----------------: | :-----------------------------------------: |
+| tainan_cache_limit | The number of requests is limited           |
+| tainan_cache       | Available to all users                      |
+| taipe_cache_limit  | The number of requests is limited           |
+| taipe_cache        | Available to all users                      |
+| taipei_limit       | The number of requests is limited           |
+| taipei             | The data is real-time but the load is high  |
+| taipei_2           | The data is real-time but the load is high  |
+| pingtung_limit     | The number of requests is limited           |
+| pingtung           | The data is real-time but the load is high  |
+| pingtung_2         | The data is real-time but the load is high  |
+
+*An API server can be monitored [here](https://status.exptech.dev/).*<br>
+
+<hr>
+<br>
+
+
 ## Known issues
 
-1. HAOS unable to install dependencies is fix, See [here](docs/haos_guide.md)
-2. Unable to reload entries in service (homeassistant.reload_config_entry).
+1. Unable to reload entries in service (homeassistant.reload_config_entry).
 
 <hr>
 <br>
@@ -131,7 +161,7 @@ sensor:
 - [ ] HomeAssistant Service: Earthquake Simulator.
 - [ ] HomeAssistant Service: Earthquake Sensor reload.
 - [ ] ExptechTW Features: Earthquake early warning Source from WebSocket.
-- [ ] ExptechTW Features: Exptech Subscribe (Ex: TREM-Net Earthquake early warning listener).
+- [ ] ExptechTW Features: Exptech Subscribe (etc. TREM-Net Earthquake early warning listener).
 
 <hr>
 <br>
