@@ -1,10 +1,10 @@
+"""utils for the Taiwan Real-time Earthquake Monitoring."""
+
 from typing import Any
 
 
 class _Missing:
-    """
-    Represents a status of missing.
-    """
+    """Represents a status of missing."""
 
     def __eq__(self, other) -> bool:
         return False

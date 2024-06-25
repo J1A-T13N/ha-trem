@@ -1,0 +1,38 @@
+{
+  "config": {
+    "abort": {
+      "already_configured": "TREM \u5df2\u7d93\u8a2d\u5b9a"
+    },
+    "error": {
+      "cannot_connect": "\u7121\u6cd5\u9023\u7dda\u81f3\u6b64\u4f3a\u670d\u5668",
+      "region_invalid": "\u5730\u5340\u4ee3\u78bc\u7121\u6548",
+      "unknown": "\u672a\u77e5\u7684\u932f\u8aa4"
+    },
+    "flow_title": "TREM: {name}",
+    "step": {
+      "customizing": {
+        "data": {
+          "node": "API \u7bc0\u9ede\u0020\u0028\u6216\u79c1\u4eba\u4f3a\u670d\u5668\u0029",
+          "preserve_data": "\u4fdd\u7559\u8cc7\u6599",
+          "region": "\u5730\u5340\u4ee3\u78bc",
+          "draw_map": "\u7e6a\u88fd\u5730\u5716 (\u6b64\u529f\u80fd\u6703\u5f71\u97ff\u6548\u80fd)"
+        },
+        "description": "\u6b64\u65b9\u6848\u6bcf\u0035\u79d2\u66f4\u65b0\u4e00\u6b21\u6578\u64da",
+        "title": "HTTP API \u0028\u514d\u8cbb\u65b9\u6848\u0029"
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "customizing": {
+        "data": {
+          "node": "API \u7bc0\u9ede\u0020\u0028\u6216\u79c1\u4eba\u4f3a\u670d\u5668\u0029",
+          "preserve_data": "\u4fdd\u7559\u8cc7\u6599",
+          "region": "\u5730\u5340\u4ee3\u78bc",
+          "draw_map": "\u7e6a\u88fd\u5730\u5716 (\u6b64\u529f\u80fd\u6703\u5f71\u97ff\u6548\u80fd)"
+        },
+        "title": "TREM"
+      }
+    }
+  }
+}

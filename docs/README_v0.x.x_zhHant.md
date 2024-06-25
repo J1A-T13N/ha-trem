@@ -14,13 +14,12 @@
 [![Project Maintenance][maintenance2-shield]][user2_profile]
 <hr>
 
-[English](README.md) | 繁體中文<br>
+[English (v0.x.x)](README_v0.x.x.md) | 繁體中文(v0.x.x)<br>
 
 
 ## 預覽
 
-![config_flow_image](https://github.com/J1A-T13N/ha-trem/assets/29163857/a6f4cc49-0521-4f27-a894-9fb1273be1cf)
-![simulator_earthquake_demo](https://github.com/J1A-T13N/ha-trem/assets/29163857/b62dab7a-2935-4477-8297-f7e275df0a81)
+![image](https://github.com/J1A-T13N/ha-trem/assets/29163857/620d2723-1d77-4ead-a203-6d0d612031fd)
 
 <hr>
 <br>
@@ -50,7 +49,7 @@
 
 
 ## 先決條件 (如果您使用的是 HAOS)
-**請閱讀[指南](docs/haos_guide.md)來安裝必要套件.**
+**請閱讀[指南](haos_guide.md)來安裝必要套件.**
 
 > [!IMPORTANT]
 > 這個自訂元件安裝方法較為困難<br>
@@ -76,7 +75,60 @@
 
 
 ## 設定
-**請跟隨設定流程新增.**
+
+```yaml
+sensor:
+  - platform: trem
+    friendly_name: Company # 顯示名稱
+    region: 116 # 示警地區
+	#node: http://127.0.0.1:8000/api/v1/eq/eew?type=cwa
+  - platform: trem
+    friendly_name: Sweet Home # 顯示名稱
+    region: 231 # 示警地區
+    keep_alive: True # 保留示警記錄
+```
+> [!TIP]
+> 此configuration適用v0.0.2以上版本<br>
+> Release v0.0.1 請將`friendly_name`改回`name`。
+<br>
+
+**:zap: 請記得重啟 Home Assistant. :zap:**
+
+<hr>
+<br>
+
+
+## 選項
+
+| Name          | Type    | Requirement  | Description                                                                                                                                         | Default                                  |
+| ------------- | ------- | ------------ | --------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------- |
+| region        | string  | **Required** | 示警地區代號可[在此處](https://github.com/ExpTechTW/TREM-tauri/blob/main/src/assets/json/region.json)查詢                                               |                                          |
+| friendly_name | string  | *Optional*   | 您想顯示的名稱　　                                                                                                                                     | `Taiwan Real-time Earthquake Monitoring` |
+| keep_alive    | boolean | *Optional*   | 保留最近的示警資料                                                                                                                                     | `false`                                  |
+| node          | string  | *Optional*   | [在此處](https://github.com/J1A-T13N/ha-trem?tab=readme-ov-file#api-node)查詢 , 或使用自定伺服器<br> (例如 http://127.0.0.1:8000/api/v1/eq/eew?type=cwa) |                                          |
+
+*`configuration.yaml` 示範檔案可[在此處](configuration.yaml)查看。*<br>
+
+<hr>
+<br>
+
+
+## 可用節點
+
+| Node               | Description                                 |
+| :----------------: | :-----------------------------------------: |
+| tainan_cache_limit | 請求次數遭到限制      |
+| tainan_cache       | 適合所有使用者　      |
+| taipe_cache_limit  | 請求次數遭到限制      |
+| taipe_cache        | 適合所有使用者　      |
+| taipei_limit       | 請求次數遭到限制      |
+| taipei             | 資料最即時，但延遲較高 |
+| taipei_2           | 資料最即時，但延遲較高 |
+| pingtung_limit     | 請求次數遭到限制      |
+| pingtung           | 資料最即時，但延遲較高 |
+| pingtung_2         | 資料最即時，但延遲較高 |
+
+*[在此處](https://status.exptech.dev/)可以查看伺服器狀態。*<br>
 
 <hr>
 <br>
@@ -84,7 +136,7 @@
 
 ## 已知問題
 
-> :tada: 暫時沒有發現問題
+1. 無法透過服務(homeassistant.reload_config_entry)重新載入。
 
 <hr>
 <br>
@@ -104,12 +156,10 @@
 
 ## 未來功能
 
-- [x] Integration 相關: Convert components from sensor to platform.
-- [x] Integration 功能: 新增等震圖.
-- [ ] ~~Integration 功能: 使用者位置或裝置追蹤計算預計震度即抵達時間.~~
-- [x] Integration 功能: 模擬地震 (用於測試自動化)。
-- [x] Integration 服務: 另存等震圖.
-- [x] Integration 服務: 重新載入整合.
+- [ ] HomeAssistant: 採用平台集合提供更多服務 (例如：等震圖繪製)。
+- [ ] HomeAssistant: 地震速報以使用者或自訂定位，計算震度及抵達時間。
+- [ ] HomeAssistant: 模擬地震服務 (用於測試自動化)。
+- [ ] HomeAssistant: 透過服務(homeassistant.reload_config_entry)重新載入。
 - [ ] ExptechTW 訂閱功能: 使用WebSocket作為地震速報來源，減少流量及延遲。
 - [ ] ExptechTW 訂閱功能: 更多訂閱方案 (例如: TREM-Net地震速報網)。
 

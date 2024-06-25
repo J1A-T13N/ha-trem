@@ -3,8 +3,11 @@
 from datetime import timedelta
 from typing import Final
 
+DEFAULT_NAME = "TREM"
 DOMAIN = "trem"
+PLATFORMS = ["image", "sensor"]
 
+ATTR_FILENAME: str = "filename"
 ATTR_ID: Final = "serial"
 ATTR_AUTHOR: Final = "provider"
 ATTR_LNG: Final = "longitude"
@@ -15,6 +18,7 @@ ATTR_LOC: Final = "location"
 ATTR_TIME: Final = "time_of_occurrence"
 ATTR_INT: Final = "intensity"
 ATTR_EST: Final = "estimate"
+ATTR_NODE: Final = "API_Node"
 ATTR_EQDATA: Final = "earthquake_data"
 
 ATTR_LIST = [
@@ -30,11 +34,19 @@ ATTR_LIST = [
     ATTR_EST,
 ]
 
-DEFAULT_FRIENDLY_NAME = "Taiwan Real-time Earthquake Monitoring"
+CONF_NODE: Final = "node"
+CONF_PRESERVE_DATA: Final = "preserve_data"
+CONF_DRAW_MAP: Final = "draw_map"
+
 DEFAULT_SCAN_INTERVAL = timedelta(seconds=5)
 
 ATTRIBUTION = "Powered by ExpTech Studio"
-DEFAULT_ICON = "mdi:earth"
+DEFAULT_ICON = "mdi:chart-timeline-variant"
+MANUFACTURER = "ExptechTW"
+TREM_COORDINATOR = "trem_coordinator"
+TREM_DATA = "trem_data"
+TREM_NAME = "trem_name"
+UPDATE_LISTENER = "update_listener"
 
 HA_USER_AGENT = (
     "TREM custom integration for Home Assistant (https://github.com/j1a-t13n/ha-trem)"
@@ -54,5 +66,6 @@ BASE_URLS = {
     "taipei_2": "https://lb-3.exptech.com.tw",
     "pingtung_2": "https://lb-4.exptech.com.tw",
 }
-CONF_NODE: Final = "node"
-CONF_KEEP_ALIVE: Final = "keep_alive"
+BASE_WS = {}
+
+REQUEST_TIMEOUT = 10  # seconds

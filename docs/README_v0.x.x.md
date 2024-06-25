@@ -5,21 +5,21 @@
 [![License][license-shield]](LICENSE)
 [![BuyMeCoffee][buymecoffeebadge]][buymecoffee]
 
+[![pre-commit][pre-commit-shield]][pre-commit]
 [![GitHub Release][releases-shield]][releases]
+
 [![hacs_custom][hacs_custom_shield]][hacs_custom]
 
 [![Project Maintenance][maintenance-shield]][user_profile]
 [![Project Maintenance][maintenance2-shield]][user2_profile]
 <hr>
 
-English | [繁體中文](README_zhHant.md)<br>
+English(v0.x.x) | [繁體中文(v0.x.x)](README_v0.x.x_zhHant.md)<br>
 
 
 ## Screenshots
 
-![config_flow_image](https://github.com/J1A-T13N/ha-trem/assets/29163857/a6f4cc49-0521-4f27-a894-9fb1273be1cf)
-![simulator_earthquake_demo](https://github.com/J1A-T13N/ha-trem/assets/29163857/b62dab7a-2935-4477-8297-f7e275df0a81)
-
+![image](https://github.com/J1A-T13N/ha-trem/assets/29163857/620d2723-1d77-4ead-a203-6d0d612031fd)
 
 <hr>
 <br>
@@ -49,7 +49,7 @@ English | [繁體中文](README_zhHant.md)<br>
 
 
 ## Prerequisite (if you're using HAOS)
-**Manual install dependencies see [here](docs/haos_guide.md).**
+**Manual install dependencies see [here](haos_guide.md).**
 
 > [!IMPORTANT]
 > This custom component installation is considered advanced<br>
@@ -76,11 +76,59 @@ English | [繁體中文](README_zhHant.md)<br>
 
 ## Config
 
-**Please use the config flow of Home Assistant.**
+```yaml
+sensor:
+  - platform: trem
+    friendly_name: Company # Display name
+    region: 116 # Region Code (Zip Code)
+	#node: http://127.0.0.1:8000/api/v1/eq/eew?type=cwa
+  - platform: trem
+    friendly_name: Sweet Home # Display name
+    keep_alive: True
+    region: 231 # Region Code (Zip Code)
+```
+> [!TIP]
+> This configuration is suitable for v0.0.2 and above versions<br>
+> Release v0.0.1 Please change `friendly_name` back to `name`.
+<br>
 
-1. With GUI. Configuration > Integration > Add Integration > Taiwan Real-time Earthquake Monitoring
-   - If the integration didn't show up in the list please REFRESH the page
-   - If the integration is still not in the list, you need to clear the browser cache.
+**:zap: Remember restart Home Assistant. :zap:**
+
+<hr>
+<br>
+
+
+## Options
+
+| Name          | Type    | Requirement  | Description                                                                                                                                                   | Default                                  |
+| ------------- | ------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------- |
+| region        | string  | **Required** | Region Code can be found [here](https-//github.com/ExpTechTW/TREM-tauri/blob/main/src/assets/json/region.json)                                                |                                          |
+| friendly_name | string  | *Optional*   | you want to display the name on Home Assistant                                                                                                                | `Taiwan Real-time Earthquake Monitoring` |
+| keep_alive    | boolean | *Optional*   | Keep recent alert data                                                                                                                                        | `false`                                  |
+| node          | string  | *Optional*   | See [API Node](https://github.com/J1A-T13N/ha-trem?tab=readme-ov-file#api-node), or using self server<br> (etc. http://127.0.0.1:8000/api/v1/eq/eew?type=cwa) |                                          |
+
+*An example of `configuration.yaml` can be found [here](configuration.yaml).*<br>
+
+<hr>
+<br>
+
+
+## API Node
+
+| Node               | Description                                 |
+| :----------------: | :-----------------------------------------: |
+| tainan_cache_limit | The number of requests is limited           |
+| tainan_cache       | Available to all users                      |
+| taipe_cache_limit  | The number of requests is limited           |
+| taipe_cache        | Available to all users                      |
+| taipei_limit       | The number of requests is limited           |
+| taipei             | The data is real-time but the load is high  |
+| taipei_2           | The data is real-time but the load is high  |
+| pingtung_limit     | The number of requests is limited           |
+| pingtung           | The data is real-time but the load is high  |
+| pingtung_2         | The data is real-time but the load is high  |
+
+*An API server can be monitored [here](https://status.exptech.dev/).*<br>
 
 <hr>
 <br>
@@ -88,7 +136,7 @@ English | [繁體中文](README_zhHant.md)<br>
 
 ## Known issues
 
-> :tada: No issues found yet
+1. Unable to reload entries in service (homeassistant.reload_config_entry).
 
 <hr>
 <br>
@@ -108,12 +156,10 @@ English | [繁體中文](README_zhHant.md)<br>
 
 ## Future
 
-- [x] Integration: Convert components from sensor to platform.
-- [x] Integration: Add isoseismal map image.
-- [ ] ~~Integration Features: Earthquake early warning by tracker device or person.~~
-- [x] Integration Service: Simulator earthquake.
-- [x] Integration Service: Save as image.
-- [x] Integration Service: Reload entity.
+- [ ] HomeAssistant Features: Integration loading its platforms from its own set up.
+- [ ] HomeAssistant Features: Earthquake early warning by tracker device or person.
+- [ ] HomeAssistant Service: Earthquake Simulator.
+- [ ] HomeAssistant Service: Earthquake Sensor reload.
 - [ ] ExptechTW Features: Earthquake early warning Source from WebSocket.
 - [ ] ExptechTW Features: Exptech Subscribe (etc. TREM-Net Earthquake early warning listener).
 

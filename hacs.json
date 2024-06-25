@@ -4,6 +4,5 @@
     "domain": "trem",
     "documentation": "https://github.com/J1A-T13N/ha-trem",
     "issue_tracker": "https://github.com/J1A-T13N/ha-trem/issues",
-    "homeassistant": "2023.8.0",
-    "//_homeassistant": " Requirement Python 3.12"
+    "homeassistant": "2024.3.0"
 }

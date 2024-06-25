@@ -1,0 +1,38 @@
+{
+  "config": {
+    "abort": {
+      "already_configured": "TREM is already configured"
+    },
+    "error": {
+      "region_invalid": "Monitoring region code is invalid.",
+      "cannot_connect": "Can't connect to this node.",
+      "unknown": "Unexpected error"
+    },
+    "flow_title": "TREM: {name}",
+    "step": {
+      "customizing": {
+        "title": "HTTP API (Free plan)",
+        "data": {
+          "region": "Monitoring region",
+          "node": "API Node (Or use self-server)",
+          "preserve_data": "Preserve data",
+          "draw_map": "Draw map (This feature affects performance)"
+        },
+        "description": "This plan data is updated every 5 seconds"
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "customizing": {
+        "title": "TREM",
+        "data": {
+          "region": "Monitoring region",
+          "node": "API Node (Or use self-server)",
+          "preserve_data": "Preserve data",
+          "draw_map": "Draw map (This feature affects performance)"
+        }
+      }
+    }
+  }
+}

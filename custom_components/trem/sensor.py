@@ -2,233 +2,248 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
+from datetime import datetime, timedelta, timezone
+import logging
 
+from homeassistant.components.sensor import SensorEntity
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import ATTR_ATTRIBUTION, CONF_REGION
+from homeassistant.core import HomeAssistant, callback
+
+from .const import (
+    ATTR_AUTHOR,
+    ATTR_DEPTH,
+    ATTR_EST,
+    ATTR_ID,
+    ATTR_INT,
+    ATTR_LAT,
+    ATTR_LIST,
+    ATTR_LNG,
+    ATTR_LOC,
+    ATTR_MAG,
+    ATTR_NODE,
+    ATTR_TIME,
+    ATTRIBUTION,
+    CONF_DRAW_MAP,
+    CONF_PRESERVE_DATA,
+    DEFAULT_ICON,
+    DEFAULT_NAME,
+    DOMAIN,
+    MANUFACTURER,
+    TREM_COORDINATOR,
+    TREM_DATA,
+)
 from .earthquake.eew import EEW, EarthquakeData
 from .earthquake.location import REGIONS
 
-import logging
-import random, validators
-import voluptuous as vol
-import homeassistant.helpers.config_validation as cv
-from homeassistant.components.sensor import (
-    PLATFORM_SCHEMA,
-    SensorEntity,
-)
-from homeassistant.const import ATTR_ATTRIBUTION, CONF_FRIENDLY_NAME, CONF_REGION
-from homeassistant.core import HomeAssistant
-from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from homeassistant.helpers.typing import ConfigType, DiscoveryInfoType
-from .const import (
-    ATTRIBUTION,
-    ATTR_ID,
-    ATTR_AUTHOR,
-    ATTR_LNG,
-    ATTR_LAT,
-    ATTR_DEPTH,
-    ATTR_MAG,
-    ATTR_LOC,
-    ATTR_TIME,
-    ATTR_EST,
-    ATTR_INT,
-    ATTR_LIST,
-    DEFAULT_FRIENDLY_NAME,
-    DEFAULT_SCAN_INTERVAL,
-    HA_USER_AGENT,
-    BASE_URLS,
-    CONF_NODE,
-    CONF_KEEP_ALIVE,
-    DEFAULT_ICON,
-)
-
-from requests import request
-from datetime import timedelta, timezone
-
 _LOGGER = logging.getLogger(__name__)
-SCAN_INTERVAL = DEFAULT_SCAN_INTERVAL
 
 
-PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
-    {
-        vol.Required(CONF_REGION): cv.string,
-        vol.Optional(CONF_FRIENDLY_NAME, default=DEFAULT_FRIENDLY_NAME): cv.string,
-        vol.Optional(CONF_NODE, default=""): cv.string,
-        vol.Optional(CONF_KEEP_ALIVE, default=False): cv.boolean,
-    }
-)
-
-
-def setup_platform(
-    hass: HomeAssistant,
-    config: ConfigType,
-    add_entities: AddEntitiesCallback,
-    discovery_info: DiscoveryInfoType | None = None,
+async def async_setup_entry(
+    hass: HomeAssistant, config: ConfigEntry, async_add_devices: Callable
 ) -> None:
-    """Set up the sensor platform."""
-    add_entities(
-        [
-            TremSensor(
-                region=config[CONF_REGION],
-                friendly_name=config[CONF_FRIENDLY_NAME],
-                node=config[CONF_NODE],
-                keep_alive=config[CONF_KEEP_ALIVE],
-            )
-        ],
-        True,
-    )
+    """Set up the trem Sensor from config."""
+
+    coordinator = hass.data[DOMAIN][config.entry_id][TREM_COORDINATOR]
+    data = hass.data[DOMAIN][config.entry_id][TREM_DATA]
+
+    devices = tremSensor(hass, config, coordinator, data)
+    async_add_devices([devices], update_before_add=True)
 
 
-class TremSensor(SensorEntity):
-    def __init__(self, region: str, friendly_name: str, node: str, keep_alive: bool):
-        self._region = int(region)
-        self._friendly_name = (
-            f"{friendly_name} ({region})"
-            if friendly_name == DEFAULT_FRIENDLY_NAME
-            else friendly_name
-        )
-        if node in BASE_URLS:
-            station = node
-            base_url = BASE_URLS[node]
-        elif validators.url(node):
-            station = "User designate"
-            base_url = node
+class tremSensor(SensorEntity):
+    """Defines a TREM sensor entity."""
+
+    def __init__(
+        self,
+        hass: HomeAssistant,
+        config: ConfigEntry,
+        coordinator: object,
+        data: object,
+    ) -> None:
+        """Initialize the sensor."""
+
+        self._coordinator: object = coordinator
+        self._data: object = data
+        self._hass: HomeAssistant = hass
+        self._entry_id: str = config.entry_id
+
+        self._eew: str | None = None
+        self._simulator: str | None = None
+
+        if config.data.get(CONF_REGION, None) is None:
+            self._region: int = int(config.options[CONF_REGION])
         else:
-            station, base_url = random.choice(list(BASE_URLS.items()))
-        self._station = station
-        self._base_url = (
-            node
-            if station == "User designate"
-            else f"{base_url}/api/v1/eq/eew?type=cwa"
-        )
-        self._retry = 0
-        # self._token = token
+            self._region: int = int(config.data[CONF_REGION])
 
-        self._eew = None
-        self._simulator = None
+        if config.data.get(CONF_PRESERVE_DATA, None) is None:
+            self._preserve_data: bool = config.options[CONF_PRESERVE_DATA]
+        else:
+            self._preserve_data: bool = config.data[CONF_PRESERVE_DATA]
 
-        self._state = 0
+        if config.data.get(CONF_DRAW_MAP, None) is None:
+            self._draw_map: bool = config.options[CONF_DRAW_MAP]
+        else:
+            self._draw_map: bool = config.data[CONF_DRAW_MAP]
+
+        self._name: str = f"{DEFAULT_NAME} {self._region} Notification"
+        self._unique_id: str = f"{DOMAIN}_{self._region}_notification"
+
+        self._state: str = ""
+        self._attributes = {}
         self._attr_value = {}
         for i in ATTR_LIST:
             self._attr_value[i] = ""
-        self._keep_alive = keep_alive
 
-        _LOGGER.debug(
-            f"Fetching data from HTTP API ({self._station}), EEW({self._region}) Monitoring..."
-        )
+    async def async_update(self) -> None:
+        """Schedule a custom update via the common entity update service."""
 
-    def update(self):
-        try:
-            if self._simulator is None:
-                if self._retry >= 5:
-                    return
+        if self._simulator is None:
+            await self._coordinator.async_request_refresh()
+            data = self._data.earthquakeData
+        else:
+            data = self._simulator
+            self._simulator = None
 
-                header = {"Accept": "application/json", "User-Agent": HA_USER_AGENT}
-                resp = request(
-                    "GET",
-                    self._base_url,
-                    headers=header,
-                )
-                resp.encoding = "utf-8"
-                if resp.ok:
-                    self._retry = 0
-                    data = resp.json()
-                else:
-                    self._retry = self._retry + 1
-                    _LOGGER.warning(
-                        f"{resp.status_code} Unable to get data from HTTP API ({self._station}), Retry {self._retry}/5..."
-                    )
+        eew = None
+        if data is not None and len(data) > 0:
+            eew = EEW.from_dict(data[0])
+
+        if eew is not None:
+            earthquakeSerial = f"{eew.id} (Serial {eew.serial})"
+            if self._eew is None:
+                self._eew = eew
+                old_earthquakeSerial = ""
             else:
-                data = self._simulator
-                self._simulator = None
+                old_eew = self._eew
+                old_earthquakeSerial = f"{old_eew.id} (Serial {old_eew.serial})"
 
-            if not data == []:
-                eew = EEW.from_dict(data[0])
-                earthquakeSerial = f"{eew.id} (Serial {eew.serial})"
-                if self._eew is None:
-                    self._eew = eew
-                    old_earthquakeSerial = ""
-                else:
-                    old_eew = self._eew
-                    old_earthquakeSerial = f"{old_eew.id} (Serial {old_eew.serial})"
+            earthquake = eew.earthquake
+            earthquakeForecast = EarthquakeData.calc_expected_intensity(
+                earthquake, [REGIONS[self._region]]
+            ).get(self._region)
 
-                earthquake = eew.earthquake
-                earthquakeForecast = EarthquakeData.calc_expected_intensity(
-                    earthquake, [REGIONS[self._region]]
-                ).get(self._region)
-
-                if not earthquakeSerial == old_earthquakeSerial:
-                    tz_TW = timezone(timedelta(hours=8))
-                    earthquakeTime = earthquake.time.astimezone(tz_TW).strftime(
-                        "%Y/%m/%d %H:%M:%S"
-                    )
-                    earthquakeProvider = (
-                        f"{eew.provider.display_name} ({eew.provider.name})"
-                    )
-                    earthquakeLocation = f"{earthquake.location.display_name} ({earthquake.lon:.2f}, {earthquake.lat:.2f})"
-
-                    _LOGGER.debug(
-                        "EEW alert updated\n"
-                        "--------------------------------\n"
-                        f"       ID: {earthquakeSerial}\n"
-                        f" Provider: {earthquakeProvider}\n"
-                        f" Location: {earthquakeLocation}\n"
-                        f"Magnitude: {earthquake.mag}\n"
-                        f"    Depth: {earthquake.depth}km\n"
-                        f"     Time: {earthquakeTime}\n"
-                        "--------------------------------"
-                    )
-
-                    self._state = earthquakeForecast.intensity
-                    self._attr_value[ATTR_INT] = earthquakeForecast.intensity.value
-                    self._attr_value[ATTR_AUTHOR] = earthquakeProvider
-                    self._attr_value[ATTR_ID] = earthquakeSerial
-                    self._attr_value[ATTR_LOC] = earthquakeLocation
-                    self._attr_value[ATTR_LNG] = f"{earthquake.lon:.2f}"
-                    self._attr_value[ATTR_LAT] = f"{earthquake.lat:.2f}"
-                    self._attr_value[ATTR_MAG] = earthquake.mag
-                    self._attr_value[ATTR_DEPTH] = earthquake.depth
-                    self._attr_value[ATTR_TIME] = earthquakeTime
-                earthquakeEst = int(
-                    earthquakeForecast.distance.s_left_time().total_seconds()
+            if earthquakeSerial != old_earthquakeSerial:
+                tz_TW = timezone(timedelta(hours=8))
+                earthquakeTime = earthquake.time.astimezone(tz_TW).strftime(
+                    "%Y/%m/%d %H:%M:%S"
                 )
-                self._attr_value[ATTR_EST] = earthquakeEst if earthquakeEst > 0 else 0
-            else:
-                self._attr_value[ATTR_EST] = 0
+                earthquakeProvider = (
+                    f"{eew.provider.display_name} ({eew.provider.name})"
+                )
+                earthquakeLocation = f"{earthquake.location.display_name} ({earthquake.lon:.2f}, {earthquake.lat:.2f})"
 
-            if self._keep_alive:
-                return
+                _LOGGER.debug(
+                    "EEW alert updated\n"
+                    "--------------------------------\n"
+                    f"       ID: {earthquakeSerial}\n"
+                    f" Provider: {earthquakeProvider}\n"
+                    f" Location: {earthquakeLocation}\n"
+                    f"Magnitude: {earthquake.mag}\n"
+                    f"    Depth: {earthquake.depth}km\n"
+                    f"     Time: {earthquakeTime}\n"
+                    "--------------------------------"
+                )
 
-            self._attr_value = {}
-            for i in ATTR_LIST:
-                self._attr_value[i] = ""
-            self._state = 0
-        except Exception as ex:
-            self._retry = self._retry + 1
-            _LOGGER.error(
-                f"({self._station}) Unable to get data from HTTP API, %s, Retry {self._retry}/5...",
-                repr(ex),
+                self._state = earthquakeForecast.intensity
+                self._attr_value[ATTR_INT] = earthquakeForecast.intensity.value
+                self._attr_value[ATTR_AUTHOR] = earthquakeProvider
+                self._attr_value[ATTR_ID] = earthquakeSerial
+                self._attr_value[ATTR_LOC] = earthquakeLocation
+                self._attr_value[ATTR_LNG] = f"{earthquake.lon:.2f}"
+                self._attr_value[ATTR_LAT] = f"{earthquake.lat:.2f}"
+                self._attr_value[ATTR_MAG] = earthquake.mag
+                self._attr_value[ATTR_DEPTH] = earthquake.depth
+                self._attr_value[ATTR_TIME] = earthquakeTime
+            earthquakeEst = int(
+                earthquakeForecast.distance.s_left_time().total_seconds()
             )
+            self._attr_value[ATTR_EST] = earthquakeEst if earthquakeEst > 0 else 0
+
+            if self._draw_map:
+                earthquake._expected_intensity = {
+                    self._region: earthquake._expected_intensity.get(self._region)
+                }
+                earthquake.map.draw()
+                waveSec = datetime.now() - earthquake.time
+                earthquake.map.draw_wave(time=waveSec.total_seconds())
+                self._data.map = earthquake.map.save()
+                self._data.mapSerial = earthquakeSerial
+
+        else:
+            self._attr_value[ATTR_EST] = 0
+
+        self._attr_value[ATTR_NODE] = self._data.station
+
+        if self._preserve_data:
+            return
+
+        self._attr_value = {}
+        for i in ATTR_LIST:
+            self._attr_value[i] = ""
+        self._state = ""
+
+    async def async_added_to_hass(self) -> None:
+        """Set up a listener and load data."""
+
+        self.async_on_remove(
+            self._coordinator.async_add_listener(self._update_callback)
+        )
+        self._update_callback()
 
     @property
-    def name(self):
-        return self._friendly_name
+    def name(self) -> str:
+        """Return the name of the sensor."""
+
+        return self._name
 
     @property
-    def state(self):
+    def state(self) -> str:
+        """Return the state of the sensor."""
+
         return self._state
 
     @property
-    def icon(self):
+    def icon(self) -> str:
+        """Icon to use in the frontend, if any."""
+
         return DEFAULT_ICON
 
     @property
-    def unique_id(self):
-        alias = self._friendly_name.replace(" ", "_")
-        return f"trem_{alias}"
+    def unique_id(self) -> str:
+        """Return the unique id."""
+
+        return self._unique_id
 
     @property
-    def extra_state_attributes(self):
-        self._attributes = {}
+    def unit_of_measurement(self):
+        """Return the unit of measurement."""
+
+        return None
+
+    @property
+    def extra_state_attributes(self) -> dict:
+        """Return extra attributes."""
+
         self._attributes[ATTR_ATTRIBUTION] = ATTRIBUTION
-        for k, _ in self._attr_value.items():
+        for k in self._attr_value:
             self._attributes[k] = self._attr_value[k]
         return self._attributes
+
+    @property
+    def device_info(self):
+        """Return device info."""
+
+        return {
+            "identifiers": {(DOMAIN, self._entry_id)},
+            "name": f"{DEFAULT_NAME} {self._data.region} Monitoring",
+            "manufacturer": MANUFACTURER,
+            "model": f"HTTP API ({self._data.plan})",
+        }
+
+    @callback
+    def _update_callback(self) -> None:
+        """Load data from integration."""
+
+        self.async_write_ha_state()

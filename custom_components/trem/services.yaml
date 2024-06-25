@@ -2,6 +2,14 @@ simulator:
   name: Simulator Earthquake
   description: Simulator Earthquake.
   fields:
+    entity_id:
+      name: Entity
+      example: "sensor.trem_202_notification"
+      required: true
+      selector:
+        entity:
+          integration: trem
+          domain: sensor
     earthquake_data:
       required: true
       name: Earthquake Data
@@ -10,15 +18,23 @@ simulator:
       selector:
         text:
 
-reload:
-  name: Reload Earthquake Sensor
-  description: If the error retry limit reached, you can reload it.
+save:
+  name: Save current image
+  description: Save the current image to a path
   fields:
     entity_id:
       name: Entity
-      description: Earthquake sensor entity.
-      example: "sensor.sweet_home"
+      description: Identifier of the image entity.
+      example: "image.trem_202_isoseismal_map"
       required: true
       selector:
         entity:
-          domain: sensor
+          integration: trem
+          domain: image
+    filename:
+      required: true
+      name: Filename
+      description: Target filename.
+      example: "/tmp/snapshot_{{ entity_id.name }}.png"
+      selector:
+        text:
