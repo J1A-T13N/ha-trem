@@ -82,6 +82,24 @@
 <br>
 
 
+## API 節點
+
+| Node               | Description      |
+| :----------------: | :--------------: |
+| tainan_cache_limit | 請求次數遭到限制　 |
+| tainan_cache       | 適合所有使用者　　 |
+| taipe_cache_limit  | 請求次數遭到限制　 |
+| taipe_cache        | 適合所有使用者　　 |
+| taipei_limit       | 請求次數遭到限制　 |
+| taipei             | 即時資料，但延遲高 |
+| taipei_2           | 即時資料，但延遲高 |
+| pingtung_limit     | 請求次數遭到限制　 |
+| pingtung           | 即時資料，但延遲高 |
+| pingtung_2         | 即時資料，但延遲高 |
+
+*An API server can be monitored [here](https://status.exptech.dev/).*<br>
+
+
 ## 已知問題
 
 > :tada: 暫時沒有發現問題

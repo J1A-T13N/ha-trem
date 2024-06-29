@@ -86,6 +86,24 @@ English | [繁體中文](README_zhHant.md)<br>
 <br>
 
 
+## API Node
+
+| Node               | Description                                 |
+| :----------------: | :-----------------------------------------: |
+| tainan_cache_limit | The number of requests is limited           |
+| tainan_cache       | Available to all users                      |
+| taipe_cache_limit  | The number of requests is limited           |
+| taipe_cache        | Available to all users                      |
+| taipei_limit       | The number of requests is limited           |
+| taipei             | The data is real-time but the load is high  |
+| taipei_2           | The data is real-time but the load is high  |
+| pingtung_limit     | The number of requests is limited           |
+| pingtung           | The data is real-time but the load is high  |
+| pingtung_2         | The data is real-time but the load is high  |
+
+*An API server can be monitored [here](https://status.exptech.dev/).*<br>
+
+
 ## Known issues
 
 > :tada: No issues found yet
