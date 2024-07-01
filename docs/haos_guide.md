@@ -24,14 +24,11 @@ docker exec -it homeassistant bash
 ![image](https://github.com/J1A-T13N/ha-trem/assets/29163857/36748f45-03c1-4f3e-814e-cd54167606b7)
 7. Copy and paste into the Terminal to install the dependencies
 ```bash
-apk add e2fsprogs musl-dev gdal-dev proj-dev proj-util gcc g++ # Required dependencies
-apk add gfortran openblas-dev linux-headers # If you're download v0.0.2, Required this dependencies
+apk add e2fsprogs musl-dev gdal-dev proj-dev proj-util gcc g++ gfortran openblas-dev linux-headers
 fallocate -l 4G /usr/tmp-disk
 mkfs.ext4 /usr/tmp-disk
 mount -o loop -t ext4 /usr/tmp-disk /tmp
-pip install --no-cache-dir geopandas==0.14.4 matplotlib==3.9.0 # Required dependencies
-pip install --no-binary :all: scipy==1.12.0 # If you're download v0.0.2, Required this dependencies
-pip install obspy==1.4.0 # If you're download v0.0.2, Required this dependencies
+pip install --no-cache-dir pandas==2.1.4 geopandas==0.14.4 matplotlib==3.9.0 scipy==1.12.0 obspy==1.4.0
 ```
 
 ![image](https://github.com/J1A-T13N/ha-trem/assets/29163857/b207f304-65bd-4ed2-aefb-60caf51f412c)
@@ -49,14 +46,11 @@ pip install obspy==1.4.0 # If you're download v0.0.2, Required this dependencies
 2. Go inside the container with docker exec -it homeassistant bash (or similar)
 3. Copy and paste into the Terminal to install the dependencies
 ```bash
-apk add e2fsprogs musl-dev gdal-dev proj-dev proj-util gcc g++ # Required dependencies
-apk add gfortran openblas-dev linux-headers # If you're download v0.0.2, Required this dependencies
+apk add e2fsprogs musl-dev gdal-dev proj-dev proj-util gcc g++ gfortran openblas-dev linux-headers
 fallocate -l 4G /usr/tmp-disk
 mkfs.ext4 /usr/tmp-disk
 mount -o loop -t ext4 /usr/tmp-disk /tmp
-pip install --no-cache-dir geopandas==0.14.4 matplotlib==3.9.0 # Required dependencies
-pip install --no-binary :all: scipy==1.12.0 # If you're download v0.0.2, Required this dependencies
-pip install obspy==1.4.0 # If you're download v0.0.2, Required this dependencies
+pip install --no-cache-dir pandas==2.1.4 geopandas==0.14.4 matplotlib==3.9.0 scipy==1.12.0 obspy==1.4.0
 ```
 
 4. If everything is successfully, [Continue configuration the integration](../README.md#config).

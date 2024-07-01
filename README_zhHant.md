@@ -5,9 +5,7 @@
 [![License][license-shield]](LICENSE)
 [![BuyMeCoffee][buymecoffeebadge]][buymecoffee]
 
-[![pre-commit][pre-commit-shield]][pre-commit]
 [![GitHub Release][releases-shield]][releases]
-
 [![hacs_custom][hacs_custom_shield]][hacs_custom]
 
 [![Project Maintenance][maintenance-shield]][user_profile]
