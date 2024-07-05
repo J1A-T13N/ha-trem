@@ -44,7 +44,6 @@ ATTRIBUTION = "Powered by ExpTech Studio"
 DEFAULT_ICON = "mdi:chart-timeline-variant"
 MANUFACTURER = "ExptechTW"
 TREM_COORDINATOR = "trem_coordinator"
-TREM_DATA = "trem_data"
 TREM_NAME = "trem_name"
 UPDATE_LISTENER = "update_listener"
 
@@ -66,6 +65,11 @@ BASE_URLS = {
     "taipei_2": "https://lb-3.exptech.com.tw",
     "pingtung_2": "https://lb-4.exptech.com.tw",
 }
-BASE_WS = {}
+BASE_WS = {
+    "taipeiWS": "wss://lb-1.exptech.dev/websocket",
+    "pingtungWS": "wss://lb-2.exptech.dev/websocket",
+    "taipeiWS_2": "wss://lb-3.exptech.dev/websocket",
+    "pingtungWS_2": "wss://lb-4.exptech.dev/websocket",
+}
 
 REQUEST_TIMEOUT = 10  # seconds
