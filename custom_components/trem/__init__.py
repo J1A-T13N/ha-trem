@@ -2,108 +2,107 @@
 
 import asyncio
 import logging
+from typing import Any
+
+from aiohttp import ClientSession
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_REGION
 from homeassistant.core import HomeAssistant
-from homeassistant.exceptions import ConfigEntryNotReady
+
+# from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
-from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
 from .const import (
     CONF_NODE,
+    DEFAULT_NAME,
     DEFAULT_SCAN_INTERVAL,
     DOMAIN,
     PLATFORMS,
     TREM_COORDINATOR,
-    TREM_DATA,
     TREM_NAME,
     UPDATE_LISTENER,
 )
-from .data import tremData
 from .services import register_services
+from .trem_update_coordinator import TremUpdateCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 
 
-async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+async def async_setup_entry(hass: HomeAssistant, config: ConfigEntry) -> bool:
     """Set up a trem entry."""
+    node: str | dict = _get_config_value(config, CONF_NODE, "")
+    region: int = _get_config_value(config, CONF_REGION, None)
 
-    node = _get_config_value(entry, CONF_NODE, "")
-    region = _get_config_value(entry, CONF_REGION, None)
     # migrate data (also after first setup) to options
-    if entry.data:
-        hass.config_entries.async_update_entry(entry, data={}, options=entry.data)
+    if config.data:
+        hass.config_entries.async_update_entry(config, data={}, options=config.data)
 
-    session = async_get_clientsession(hass)
-
-    trem_data = tremData(
+    session: ClientSession = async_get_clientsession(hass)
+    trem_coordinator: TremUpdateCoordinator = TremUpdateCoordinator(
         hass,
         session,
         node,
         region,
+        DEFAULT_SCAN_INTERVAL,
     )
-
-    trem_coordinator = DataUpdateCoordinator(
-        hass,
-        _LOGGER,
-        name=f"trem {region}",
-        update_method=trem_data.async_update_data,
-        update_interval=DEFAULT_SCAN_INTERVAL,
-    )
-
-    trem_hass_data = hass.data.setdefault(DOMAIN, {})
-    trem_hass_data[entry.entry_id] = {
-        TREM_DATA: trem_data,
-        TREM_COORDINATOR: trem_coordinator,
-        TREM_NAME: f"trem {region}",
-    }
 
     # Fetch initial data so we have data when entities subscribe
-    await trem_coordinator.async_refresh()
-    if trem_data.region is None:
-        raise ConfigEntryNotReady
+    await trem_coordinator.async_config_entry_first_refresh()
+
+    hass.data.setdefault(DOMAIN, {})
+    hass.data[DOMAIN][config.entry_id] = {
+        TREM_COORDINATOR: trem_coordinator,
+        TREM_NAME: f"{DEFAULT_NAME} {region} Monitoring",
+    }
 
     for platform in PLATFORMS:
         hass.async_create_task(
-            hass.config_entries.async_forward_entry_setup(entry, platform)
+            hass.config_entries.async_forward_entry_setup(config, platform)
         )
 
-    update_listener = entry.add_update_listener(async_update_options)
-    hass.data[DOMAIN][entry.entry_id][UPDATE_LISTENER] = update_listener
+    update_listener = config.add_update_listener(async_update_options)
+    hass.data[DOMAIN][config.entry_id][UPDATE_LISTENER] = update_listener
 
     register_services(hass)
     return True
 
 
-async def async_update_options(hass: HomeAssistant, entry: ConfigEntry):
+async def async_update_options(hass: HomeAssistant, config: ConfigEntry):
     """Handle options update."""
 
-    await hass.config_entries.async_reload(entry.entry_id)
+    await hass.config_entries.async_reload(config.entry_id)
 
 
-async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
+async def async_unload_entry(hass: HomeAssistant, config: ConfigEntry):
     """Unload a config entry."""
 
     unload_ok = all(
         await asyncio.gather(
             *[
-                hass.config_entries.async_forward_entry_unload(entry, platform)
+                hass.config_entries.async_forward_entry_unload(config, platform)
                 for platform in PLATFORMS
             ]
         )
     )
 
     if unload_ok:
-        update_listener = hass.data[DOMAIN][entry.entry_id][UPDATE_LISTENER]
+        update_listener = hass.data[DOMAIN][config.entry_id][UPDATE_LISTENER]
         update_listener()
-        hass.data[DOMAIN].pop(entry.entry_id)
+        hass.data[DOMAIN].pop(config.entry_id)
         if not hass.data[DOMAIN]:
             hass.data.pop(DOMAIN)
     return unload_ok
 
 
-def _get_config_value(config_entry, key, default):
+async def async_reload_entry(hass: HomeAssistant, config: ConfigEntry) -> None:
+    """Reload the HACS config entry."""
+
+    await async_unload_entry(hass, config)
+    await async_setup_entry(hass, config)
+
+
+def _get_config_value(config_entry: ConfigEntry, key: str, default: Any | None = None):
     if config_entry.options:
         return config_entry.options.get(key, default)
     return config_entry.data.get(key, default)

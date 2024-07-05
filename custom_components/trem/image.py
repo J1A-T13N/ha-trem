@@ -6,25 +6,28 @@ from collections.abc import Callable
 from io import BytesIO
 import logging
 import os
+from typing import Any
 
 from PIL import Image
 
 from homeassistant.components.image import ImageEntity
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import ATTR_ATTRIBUTION
+from homeassistant.const import ATTR_ATTRIBUTION, CONF_REGION
 from homeassistant.core import HomeAssistant, callback
+from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.util import dt as dt_util
 
 from .const import (
-    ATTRIBUTION,
     ATTR_ID,
+    ATTRIBUTION,
     CONF_DRAW_MAP,
     DEFAULT_NAME,
     DOMAIN,
     MANUFACTURER,
     TREM_COORDINATOR,
-    TREM_DATA,
+    TREM_NAME,
 )
+from .trem_update_coordinator import TremUpdateCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -34,15 +37,14 @@ async def async_setup_entry(
 ) -> None:
     """Set up the TREM Image from config."""
 
-    if config.data.get(CONF_DRAW_MAP, None) is None:
-        draw_map = config.options[CONF_DRAW_MAP]
-    else:
-        draw_map = config.data[CONF_DRAW_MAP]
+    draw_map = _get_config_value(config, CONF_DRAW_MAP, False)
 
     if draw_map:
-        coordinator = hass.data[DOMAIN][config.entry_id][TREM_COORDINATOR]
-        data = hass.data[DOMAIN][config.entry_id][TREM_DATA]
-        device = tremImage(hass, config, coordinator, data)
+        domain_data = hass.data[DOMAIN][config.entry_id]
+        name = domain_data[TREM_NAME]
+        coordinator = domain_data[TREM_COORDINATOR]
+
+        device = tremImage(hass, name, config, coordinator)
         async_add_devices([device], update_before_add=True)
 
 
@@ -52,34 +54,42 @@ class tremImage(ImageEntity):
     def __init__(
         self,
         hass: HomeAssistant,
+        name: str,
         config: ConfigEntry,
-        coordinator: object,
-        data: object,
+        coordinator: TremUpdateCoordinator,
     ) -> None:
         """Initialize the image."""
 
         super().__init__(hass)
 
-        self._coordinator: object = coordinator
-        self._data: object = data
+        self._coordinator: TremUpdateCoordinator = coordinator
         self._hass: HomeAssistant = hass
-        self._entry_id: str = config.entry_id
+
         self._first_draw: bool = False
+        self._region: int | None = int(_get_config_value(config, CONF_REGION, None))
+
+        self._attr_name = f"{DEFAULT_NAME} {self._coordinator.region} Isoseismal Map"
+        self._attr_unique_id = (
+            f"{DEFAULT_NAME}_{self._coordinator.region}_isoseismal_map"
+        )
+        self._attr_content_type: str = "image/png"
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, config.entry_id)},
+            name=name,
+            manufacturer=MANUFACTURER,
+            model=f"HTTP API ({self._coordinator.plan})",
+        )
 
         self.image: BytesIO = BytesIO()
-        self._attr_name: str = f"{DEFAULT_NAME} {data.region} Isoseismal Map"
-        self._attr_unique_id: str = f"{DOMAIN}_{data.region}_isoseismal_map"
-        self._attr_content_type: str = "image/png"
         self._attributes = {}
         self._attr_value = {}
 
     async def async_added_to_hass(self) -> None:
-        """Set up a listener and load data."""
+        """Run when this Entity has been added to HA."""
 
         self.async_on_remove(
             self._coordinator.async_add_listener(self._update_callback)
         )
-        self._update_callback()
 
     async def async_image(self) -> bytes | None:
         """Return bytes of image."""
@@ -88,9 +98,9 @@ class tremImage(ImageEntity):
 
     @callback
     def _update_callback(self):
-        """Create the TREM Image."""
+        """Handle updated data from the coordinator."""
 
-        if self._data.map is None:
+        if self._coordinator.map is None:
             if not self._first_draw:
                 self._first_draw = True
                 directory = os.path.dirname(os.path.realpath(__file__))
@@ -100,31 +110,27 @@ class tremImage(ImageEntity):
                 DEFAULT_IMG.save(self.image, format="PNG")
             else:
                 return
-        elif self.image == self._data.map:
+        elif self.image == self._coordinator.map:
             return
         else:
-            self.image = self._data.map
+            self.image = self._coordinator.map
 
-        self._attr_value[ATTR_ID] = self._data.mapSerial
+        self._attr_value[ATTR_ID] = self._coordinator.mapSerial
         self._attr_image_last_updated = dt_util.utcnow()
+
         self.async_write_ha_state()
 
     @property
-    def device_info(self):
-        """Return device info."""
-
-        return {
-            "identifiers": {(DOMAIN, self._entry_id)},
-            "name": f"{DEFAULT_NAME} {self._data.region} Monitoring",
-            "manufacturer": MANUFACTURER,
-            "model": f"HTTP API ({self._data.plan})",
-        }
-
-    @property
-    def extra_state_attributes(self) -> dict:
+    def extra_state_attributes(self) -> dict[str, Any]:
         """Return extra attributes."""
 
         self._attributes[ATTR_ATTRIBUTION] = ATTRIBUTION
         for k in self._attr_value:
             self._attributes[k] = self._attr_value[k]
         return self._attributes
+
+
+def _get_config_value(config_entry: ConfigEntry, key: str, default: Any | None = None):
+    if config_entry.options:
+        return config_entry.options.get(key, default)
+    return config_entry.data.get(key, default)

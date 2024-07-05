@@ -5,7 +5,7 @@ import json
 import logging
 import os
 
-import aiohttp
+from aiohttp import client_exceptions
 from aiohttp.hdrs import ACCEPT, CONTENT_TYPE, METH_GET, USER_AGENT
 import validators
 import voluptuous as vol
@@ -32,11 +32,12 @@ from .const import (
     CONF_DRAW_MAP,
     CONF_NODE,
     CONF_PRESERVE_DATA,
+    DEFAULT_SCAN_INTERVAL,
     DOMAIN,
     HA_USER_AGENT,
     REQUEST_TIMEOUT,
 )
-from .data import tremData
+from .trem_update_coordinator import TremUpdateCoordinator
 
 # ACTIONS = {
 #    "customizing": "HTTP API (Free plan)",
@@ -46,8 +47,9 @@ from .data import tremData
 _LOGGER = logging.getLogger(__name__)
 
 
-async def getRegionCode() -> dict:
+async def getRegionCode() -> list:
     """Get the region options."""
+
     directory = os.path.dirname(os.path.realpath(__file__))
     region_path = os.path.join(directory, "asset/region.json")
     with open(
@@ -70,11 +72,14 @@ async def validate_input(hass: core.HomeAssistant, user_input) -> bool:
 
     Data has the keys from DATA_SCHEMA with values provided by the user.
     """
+
     if CONF_REGION in user_input:
         CODES = await getRegionCode()
         region = user_input[CONF_REGION]
         if region not in CODES:
             raise RegionInvalid
+    else:
+        raise RegionInvalid
 
     if CONF_USERNAME in user_input:
         session = async_get_clientsession(hass)
@@ -82,41 +87,48 @@ async def validate_input(hass: core.HomeAssistant, user_input) -> bool:
             CONF_USERNAME: user_input.get(CONF_USERNAME, ""),
             CONF_PASSWORD: user_input.get(CONF_PASSWORD, ""),
         }
-        trem_data = tremData(hass, session, login_info)
+        trem_coordinator: TremUpdateCoordinator = TremUpdateCoordinator(
+            hass,
+            session,
+            login_info,
+            region,
+            DEFAULT_SCAN_INTERVAL,
+        )
 
-        await trem_data.async_update_data()
-        if trem_data.username is None:
+        await trem_coordinator.async_config_entry_first_refresh()
+        if trem_coordinator.username is None:
             raise CannotConnect
 
-        return True
+    if CONF_NODE in user_input:
+        URL = user_input[CONF_NODE]
+        if URL == "" or URL in BASE_URLS:
+            return True
 
-    URL = user_input[CONF_NODE]
-    if URL == "" or URL in BASE_URLS:
-        return True
+        if validators.url(URL):
+            try:
+                session = async_get_clientsession(hass, verify_ssl=False)
+                payload = {}
+                headers = {
+                    ACCEPT: CONTENT_TYPE_JSON,
+                    CONTENT_TYPE: CONTENT_TYPE_JSON,
+                    USER_AGENT: HA_USER_AGENT,
+                }
+                response = await session.request(
+                    METH_GET,
+                    url=URL,
+                    data=json.dumps(payload),
+                    headers=headers,
+                    timeout=REQUEST_TIMEOUT,
+                )
 
-    if validators.url(URL):
-        try:
-            session = async_get_clientsession(hass, verify_ssl=False)
-            payload = {}
-            headers = {
-                ACCEPT: CONTENT_TYPE_JSON,
-                CONTENT_TYPE: CONTENT_TYPE_JSON,
-                USER_AGENT: HA_USER_AGENT,
-            }
-            response = await session.request(
-                METH_GET,
-                url=URL,
-                data=json.dumps(payload),
-                headers=headers,
-                timeout=REQUEST_TIMEOUT,
-            )
+                if response.status == HTTPStatus.OK:
+                    return True
+            except client_exceptions.ClientConnectorError as ex:
+                _LOGGER.error(
+                    f"Failed fetching data from HTTP API({URL}), {ex.strerror}."
+                )
 
-            if response.status == HTTPStatus.OK:
-                return True
-        except aiohttp.ClientError as ex:
-            _LOGGER.error(f"Failed fetching data from HTTP API({URL}), {ex.strerror}.")
-
-        raise CannotConnect
+            raise CannotConnect
 
     return True
 
@@ -129,6 +141,7 @@ class tremFlowHandler(ConfigFlow, domain=DOMAIN):
 
     def __init__(self) -> None:
         """Initialize flow."""
+
         self._region: str | None = None
         self._node: str | None = None
         self._preserve_data: bool | None = None
@@ -138,10 +151,12 @@ class tremFlowHandler(ConfigFlow, domain=DOMAIN):
     @callback
     def async_get_options_flow(config_entry: ConfigEntry):
         """Get option flow."""
+
         return OptionsFlowHandler(config_entry)
 
     async def async_step_user(self, user_input=None) -> FlowResult:
         """Handle the initial step."""
+
         # if user_input is None:
         #    return self.async_show_form(
         #        step_id="user",
@@ -160,6 +175,7 @@ class tremFlowHandler(ConfigFlow, domain=DOMAIN):
         self, user_input: dict | None = None, error=None
     ) -> FlowResult:
         """Handle a flow initialized by the customizing."""
+
         errors = {}
         if user_input is None:
             user_input = {}
@@ -207,19 +223,6 @@ class tremFlowHandler(ConfigFlow, domain=DOMAIN):
             errors=errors,
         )
 
-    @property
-    def _name(self):
-        # pylint: disable=no-member
-        # https://github.com/PyCQA/pylint/issues/3167
-        return self.context.get(CONF_REGION)
-
-    @_name.setter
-    def _name(self, value):
-        # pylint: disable=no-member
-        # https://github.com/PyCQA/pylint/issues/3167
-        self.context[CONF_REGION] = value
-        self.context["title_placeholders"] = {"name": self._region}
-
 
 class OptionsFlowHandler(OptionsFlow):
     """Handle options flow changes."""
@@ -263,7 +266,9 @@ class OptionsFlowHandler(OptionsFlow):
             except CannotConnect:
                 errors["base"] = "cannot_connect"
             except Exception:
-                _LOGGER.exception("Unexpected exception")
+                _LOGGER.exception(
+                    "An unexpected exception occurred during the configuration flow"
+                )
                 errors["base"] = "unknown"
 
         self._node = self.config_entry.options.get(CONF_NODE, "random")

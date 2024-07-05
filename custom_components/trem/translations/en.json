@@ -8,30 +8,31 @@
       "cannot_connect": "Can't connect to this node.",
       "unknown": "Unexpected error"
     },
-    "flow_title": "TREM: {name}",
+    "flow_title": "Taiwan Real-time Earthquake Monitoring",
     "step": {
       "customizing": {
-        "title": "HTTP API (Free plan)",
+        "title": "HTTP(S) API (Free plan)",
         "data": {
           "region": "Monitoring region",
           "node": "API Node (Or use self-server)",
           "preserve_data": "Preserve data",
           "draw_map": "Draw map (This feature affects performance)"
         },
-        "description": "This plan data is updated every 5 seconds"
+        "description": "This plan data is updated every 5 second.\nPlease read the following Terms of Service (https://exptech.com.tw/tos) carefully."
       }
     }
   },
   "options": {
     "step": {
       "customizing": {
-        "title": "TREM",
+        "title": "HTTP(S) API (Free plan)",
         "data": {
           "region": "Monitoring region",
           "node": "API Node (Or use self-server)",
           "preserve_data": "Preserve data",
           "draw_map": "Draw map (This feature affects performance)"
-        }
+        },
+        "description": "This plan data is updated every 5 second.\nPlease read the following Terms of Service (https://exptech.com.tw/tos) carefully."
       }
     }
   }
