@@ -27,7 +27,7 @@ from .const import (
     TREM_COORDINATOR,
     TREM_NAME,
 )
-from .trem_update_coordinator import TremUpdateCoordinator
+from .trem_update_coordinator import tremUpdateCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -37,12 +37,12 @@ async def async_setup_entry(
 ) -> None:
     """Set up the TREM Image from config."""
 
-    draw_map = _get_config_value(config, CONF_DRAW_MAP, False)
+    draw_map: bool = _get_config_value(config, CONF_DRAW_MAP, False)
 
     if draw_map:
-        domain_data = hass.data[DOMAIN][config.entry_id]
-        name = domain_data[TREM_NAME]
-        coordinator = domain_data[TREM_COORDINATOR]
+        domain_data: dict = hass.data[DOMAIN][config.entry_id]
+        name: str = domain_data[TREM_NAME]
+        coordinator: tremUpdateCoordinator = domain_data[TREM_COORDINATOR]
 
         device = tremImage(hass, name, config, coordinator)
         async_add_devices([device], update_before_add=True)
@@ -56,17 +56,17 @@ class tremImage(ImageEntity):
         hass: HomeAssistant,
         name: str,
         config: ConfigEntry,
-        coordinator: TremUpdateCoordinator,
+        coordinator: tremUpdateCoordinator,
     ) -> None:
         """Initialize the image."""
 
         super().__init__(hass)
 
-        self._coordinator: TremUpdateCoordinator = coordinator
-        self._hass: HomeAssistant = hass
+        self._coordinator = coordinator
+        self._hass = hass
 
         self._first_draw: bool = False
-        self._region: int | None = int(_get_config_value(config, CONF_REGION, None))
+        self._region: int | None = _get_config_value(config, CONF_REGION, None)
 
         self._attr_name = f"{DEFAULT_NAME} {self._coordinator.region} Isoseismal Map"
         self._attr_unique_id = (
@@ -106,8 +106,8 @@ class tremImage(ImageEntity):
                 directory = os.path.dirname(os.path.realpath(__file__))
                 image_path = os.path.join(directory, "asset/default.png")
 
-                DEFAULT_IMG = Image.open(image_path, mode="r")
-                DEFAULT_IMG.save(self.image, format="PNG")
+                default_img = Image.open(image_path, mode="r")
+                default_img.save(self.image, format="PNG")
             else:
                 return
         elif self.image == self._coordinator.map:

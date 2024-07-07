@@ -7,6 +7,7 @@ from datetime import datetime, timedelta, timezone
 import logging
 from typing import Any
 
+from homeassistant.components import persistent_notification
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import ATTR_ATTRIBUTION, CONF_REGION
@@ -27,6 +28,7 @@ from .const import (
     ATTR_NODE,
     ATTR_TIME,
     ATTRIBUTION,
+    CLIENT_NAME,
     CONF_DRAW_MAP,
     CONF_PRESERVE_DATA,
     DEFAULT_ICON,
@@ -38,8 +40,7 @@ from .const import (
 )
 from .earthquake.eew import EEW, EarthquakeData
 from .earthquake.location import REGIONS
-from .earthquake.model import RegionExpectedIntensity
-from .trem_update_coordinator import TremUpdateCoordinator
+from .trem_update_coordinator import tremUpdateCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -51,9 +52,9 @@ async def async_setup_entry(
 ) -> None:
     """Set up the trem Sensor from config."""
 
-    domain_data = hass.data[DOMAIN][config.entry_id]
-    name = domain_data[TREM_NAME]
-    coordinator = domain_data[TREM_COORDINATOR]
+    domain_data: dict = hass.data[DOMAIN][config.entry_id]
+    name: str = domain_data[TREM_NAME]
+    coordinator: tremUpdateCoordinator = domain_data[TREM_COORDINATOR]
 
     devices = tremSensor(hass, name, config, coordinator)
     async_add_devices([devices], update_before_add=True)
@@ -67,18 +68,18 @@ class tremSensor(SensorEntity):
         hass: HomeAssistant,
         name: str,
         config: ConfigEntry,
-        coordinator: TremUpdateCoordinator,
+        coordinator: tremUpdateCoordinator,
     ) -> None:
         """Initialize the sensor."""
 
-        self._coordinator: TremUpdateCoordinator = coordinator
-        self._hass: HomeAssistant = hass
+        self._coordinator = coordinator
+        self._hass = hass
 
         self._eew: EEW | None = None
-        self._simulator: list | None = None
-        self._simulatorTime: datetime | None = None
+        self.simulator: list | None = None
+        self.simulatorTime: datetime | None = None
 
-        self._region: int = int(_get_config_value(config, CONF_REGION))
+        self._region: int = _get_config_value(config, CONF_REGION)
         self._preserve_data: bool = _get_config_value(config, CONF_PRESERVE_DATA, False)
         self._draw_map: bool = _get_config_value(config, CONF_DRAW_MAP, False)
 
@@ -91,7 +92,7 @@ class tremSensor(SensorEntity):
             model=f"HTTP API ({self._coordinator.plan})",
         )
 
-        self._state: str = ""
+        self._state = ""
         self._attributes = {}
         self._attr_value = {}
         for i in ATTR_LIST:
@@ -106,14 +107,14 @@ class tremSensor(SensorEntity):
             if isinstance(self._coordinator.earthquakeData, list)
             else []
         )
-        if len(data) == 0 and isinstance(self._simulator, list):
-            data = self._simulator
-            if self._simulatorTime is None:
-                self._simulatorTime = datetime.now()
+        if len(data) == 0 and isinstance(self.simulator, list):
+            data = self.simulator
+            if self.simulatorTime is None:
+                self.simulatorTime = datetime.now()
 
-            time = datetime.now() - self._simulatorTime
+            time = datetime.now() - self.simulatorTime
             if time.total_seconds() >= 240:
-                self._simulator = None
+                self.simulator = None
 
         eew: EEW | None = None
         if len(data) > 0:
@@ -128,12 +129,10 @@ class tremSensor(SensorEntity):
                 old_eew = self._eew
                 old_earthquakeSerial = f"{old_eew.id} (Serial {old_eew.serial})"
 
-            earthquake: EarthquakeData = eew.earthquake
-            earthquakeForecast: RegionExpectedIntensity = (
-                EarthquakeData.calc_expected_intensity(
-                    earthquake, [REGIONS[self._region]]
-                ).get(self._region)
-            )
+            earthquake = eew.earthquake
+            earthquakeForecast = EarthquakeData.calc_expected_intensity(
+                earthquake, [REGIONS[self._region]]
+            ).get(self._region)
 
             if earthquakeSerial != old_earthquakeSerial:
                 self._eew = eew
@@ -147,8 +146,8 @@ class tremSensor(SensorEntity):
                 )
                 earthquakeLocation = f"{earthquake.location.display_name} ({earthquake.lon:.2f}, {earthquake.lat:.2f})"
 
-                _LOGGER.debug(
-                    "EEW alert updated\n"
+                if _LOGGER.level <= 20:
+                    message = "EEW alert updated\n"
                     "--------------------------------\n"
                     f"       ID: {earthquakeSerial}\n"
                     f" Provider: {earthquakeProvider}\n"
@@ -157,7 +156,9 @@ class tremSensor(SensorEntity):
                     f"    Depth: {earthquake.depth}km\n"
                     f"     Time: {earthquakeTime}\n"
                     "--------------------------------"
-                )
+                    _notify_message(
+                        self._hass, f"{eew.id}_{eew.serial}", CLIENT_NAME, message
+                    )
 
                 self._state = earthquakeForecast.intensity
                 self._attr_value[ATTR_INT] = earthquakeForecast.intensity.value
@@ -179,7 +180,7 @@ class tremSensor(SensorEntity):
                     self._region: earthquake._expected_intensity.get(self._region)
                 }
                 earthquake.map.draw()
-                waveSec: timedelta = datetime.now() - earthquake.time
+                waveSec = datetime.now() - earthquake.time
                 earthquake.map.draw_wave(time=waveSec.total_seconds())
                 self._coordinator.map = earthquake.map.save()
                 self._coordinator.mapSerial = earthquakeSerial
@@ -206,7 +207,11 @@ class tremSensor(SensorEntity):
     @property
     def available(self):
         """Return True if entity is available."""
-        return self._coordinator.last_update_success
+
+        if self._coordinator.retry > 1:
+            return self._coordinator.last_update_success
+
+        return True
 
     @property
     def state(self) -> str:
@@ -246,3 +251,13 @@ def _get_config_value(config_entry: ConfigEntry, key: str, default: Any | None =
     if config_entry.options:
         return config_entry.options.get(key, default)
     return config_entry.data.get(key, default)
+
+
+def _notify_message(
+    hass: HomeAssistant, notification_id: str, title: str, message: str
+) -> None:
+    """Notify user with persistent notification."""
+
+    persistent_notification.async_create(
+        hass, message, title, f"{DOMAIN}.{notification_id}"
+    )

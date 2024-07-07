@@ -71,28 +71,25 @@ def register_services(hass: HomeAssistant) -> None:
 
         _LOGGER.debug("Starting simulator earthquake.")
 
-        entity_id = service_call.data[ATTR_ENTITY_ID]
-        eartkquakeData = service_call.data[ATTR_EQDATA]
+        entity_id: str | None = service_call.data[ATTR_ENTITY_ID]
+        eartkquakeData: list = service_call.data[ATTR_EQDATA]
 
         platforms = async_get_platforms(hass, DOMAIN)
-
         if len(platforms) < 1:
             raise HomeAssistantError(f"Integration not found: {DOMAIN}")
 
         entity: SensorEntity | None = None
-
         for platform in platforms:
             entity_tmp: SensorEntity | None = platform.entities.get(entity_id, None)
             if entity_tmp is not None:
                 entity = entity_tmp
                 break
-
         if not entity:
             raise HomeAssistantError(
                 f"Could not find entity {entity_id} from integration {DOMAIN}"
             )
 
-        entity._simulator = json.loads(eartkquakeData)  # noqa: SLF001
+        entity.simulator = json.loads(eartkquakeData)
 
     hass.services.async_register(
         DOMAIN,

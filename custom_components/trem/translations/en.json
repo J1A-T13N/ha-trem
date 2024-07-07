@@ -4,9 +4,12 @@
       "already_configured": "TREM is already configured"
     },
     "error": {
+      "already_in_progress": "Please wait for it to finish before retry for config flow.",
+      "account_invalid": "The account does not exist or the password is invalid.",
+      "membership_expired": "Your VIP membership has expired, Please re-subscribe.",
       "region_invalid": "Monitoring region code is invalid.",
-      "cannot_connect": "Can't connect to this node.",
-      "unknown": "Unexpected error"
+      "cannot_connect": "Can't connect Exptech server.",
+      "unknown": "Unexpected error."
     },
     "flow_title": "Taiwan Real-time Earthquake Monitoring",
     "step": {
@@ -18,7 +21,18 @@
           "preserve_data": "Preserve data",
           "draw_map": "Draw map (This feature affects performance)"
         },
-        "description": "This plan data is updated every 5 second.\nPlease read the following Terms of Service (https://exptech.com.tw/tos) carefully."
+        "description": "This plan data is updated every 5 second.\nPlease read the following Terms of Service (https://exptech.com.tw/tos) carefully.\nGo to https://exptech.com.tw/pricing to subscribe"
+      },
+      "cloud": {
+        "title": "WebSocket (Subscribe plan)",
+        "data": {
+          "region": "Monitoring region",
+          "email": "Exptech email",
+          "password": "Exptech password",
+          "preserve_data": "Preserve data",
+          "draw_map": "Draw map (This feature affects performance)"
+        },
+        "description": "This plan data is updated every 1 second.\nPlease read the following Terms of Service (https://exptech.com.tw/tos) carefully."
       }
     }
   },
@@ -33,6 +47,17 @@
           "draw_map": "Draw map (This feature affects performance)"
         },
         "description": "This plan data is updated every 5 second.\nPlease read the following Terms of Service (https://exptech.com.tw/tos) carefully."
+      },
+      "cloud": {
+        "title": "WebSocket (Subscribe plan)",
+        "data": {
+          "region": "Monitoring region",
+          "email": "Exptech email",
+          "password": "Exptech password",
+          "preserve_data": "Preserve data",
+          "draw_map": "Draw map (This feature affects performance)"
+        },
+        "description": "This plan data is updated every 1 second.\nPlease read the following Terms of Service (https://exptech.com.tw/tos) carefully.\nGo to https://exptech.com.tw/pricing to subscribe"
       }
     }
   }
