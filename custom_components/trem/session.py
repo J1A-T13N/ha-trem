@@ -13,7 +13,7 @@ from aiohttp.client_exceptions import (
     ServerTimeoutError,
     TooManyRedirects,
 )
-from aiohttp.hdrs import CONTENT_TYPE, METH_POST, USER_AGENT
+from aiohttp.hdrs import ACCEPT, CONTENT_TYPE, METH_POST, USER_AGENT
 
 from homeassistant.const import (
     APPLICATION_NAME,
@@ -33,14 +33,7 @@ from .const import (
     REQUEST_TIMEOUT,
     __version__,
 )
-from .exceptions import (
-    AuthorizationFailed,
-    AuthorizationLimit,
-    CannotConnect,
-    MembershipExpired,
-    RateLimitExceeded,
-    WebSocketClosure,
-)
+from .exceptions import CannotConnect, WebSocketClosure
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -57,6 +50,7 @@ class WebSocketEvent(Enum):
     VERIFY = "verify"
     CLOSE = "close"
     ERROR = "error"
+    TSUNAMI = "tsunami"
 
 
 class WebSocketService(Enum):
@@ -72,7 +66,7 @@ class WebSocketService(Enum):
     TREM_INTENSITY = "trem.intensity"
 
 
-class WebSocketClient:
+class WebSocketConnection:
     """A Websocket connection to a TREM service."""
 
     def __init__(self, hass: HomeAssistant, url: str, credentials: list) -> None:
@@ -91,9 +85,10 @@ class WebSocketClient:
         self.subscrib_service: list = []
         self._register_service: list[WebSocketService] = [
             WebSocketService.EEW.value,
-            # WebSocketService.TSUNAMI.value,
+            WebSocketService.TSUNAMI.value,
         ]
         self.earthquakeData: list = []
+        self.tsunamiData: list = []
 
     async def connect(self):
         """Connect to TREM websocket..."""
@@ -101,11 +96,16 @@ class WebSocketClient:
         async def _async_stop_handler(event):
             await asyncio.gather(*[self.close()])
 
-        _LOGGER.info("Connecting to WebSocket...")
-
         session = self._session
+        headers = {
+            ACCEPT: CONTENT_TYPE_JSON,
+            CONTENT_TYPE: CONTENT_TYPE_JSON,
+            USER_AGENT: HA_USER_AGENT,
+        }
         self._connection = await session.ws_connect(
-            self._url, max_msg_size=DEFAULT_MAX_MSG_SIZE
+            self._url,
+            headers=headers,
+            max_msg_size=DEFAULT_MAX_MSG_SIZE,
         )
 
         self._hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STOP, _async_stop_handler)
@@ -162,13 +162,14 @@ class WebSocketClient:
 
                 data = await asyncio.wait_for(self.wait_for_verify(), timeout=60)
                 self.subscrib_service = data["list"]
-                if len(self.subscrib_service) == 0:
-                    raise MembershipExpired
 
             if data_type == WebSocketEvent.EEW.value:
-                if msg_data["author"] != "cwa":
-                    continue
-                self.earthquakeData = msg_data
+                if msg_data["author"] == "cwa":
+                    self.earthquakeData = msg_data
+
+            if data_type == WebSocketEvent.TSUNAMI.value:
+                if msg_data["author"] == "cwa":
+                    self.tsunamiData = msg_data
 
         await self._disconnected()
 
@@ -179,7 +180,6 @@ class WebSocketClient:
             msg = await self._connection.receive()
             if msg:
                 msg_data: dict = json.loads(msg.data)
-                # msg_type: WSMsgType = msg.type
             else:
                 continue
 
@@ -254,16 +254,23 @@ class WebSocketClient:
 
     async def _handle_error(self, msg_data: dict) -> bool:
         status_code = msg_data.get("data").get("code")
+        message: str | None = None
+
         if status_code == 400:
-            raise AuthorizationLimit
+            message = (
+                "The number of available authorization has reached the upper limit."
+            )
 
         if status_code == 401:
-            raise AuthorizationFailed
+            message = "The account does not exist or password is invalid."
 
         if status_code == 403:
-            raise MembershipExpired
+            message = "Your VIP membership has expired, Please re-subscribe."
 
         if status_code == 429:
-            raise RateLimitExceeded
+            message = "Too many requests in a given time."
 
-        return False
+        if message is None:
+            return False
+
+        _LOGGER.error(message)

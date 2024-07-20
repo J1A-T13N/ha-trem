@@ -34,7 +34,7 @@ ATTR_INT = "intensity"
 ATTR_EST = "estimate"
 ATTR_NODE = "API_Node"
 ATTR_EQDATA = "earthquake_data"
-ATTR_LIST = [
+EARTHQUAKE_ATTR = [
     ATTR_ID,
     ATTR_AUTHOR,
     ATTR_LNG,
@@ -45,6 +45,10 @@ ATTR_LIST = [
     ATTR_TIME,
     ATTR_INT,
     ATTR_EST,
+]
+TSUNAMI_ATTR = [
+    ATTR_ID,
+    ATTR_AUTHOR,
 ]
 MANUFACTURER = "ExptechTW"
 

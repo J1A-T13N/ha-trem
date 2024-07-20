@@ -21,7 +21,6 @@ from .const import (
     ATTR_ID,
     ATTR_INT,
     ATTR_LAT,
-    ATTR_LIST,
     ATTR_LNG,
     ATTR_LOC,
     ATTR_MAG,
@@ -34,9 +33,11 @@ from .const import (
     DEFAULT_ICON,
     DEFAULT_NAME,
     DOMAIN,
+    EARTHQUAKE_ATTR,
     MANUFACTURER,
     TREM_COORDINATOR,
     TREM_NAME,
+    TSUNAMI_ATTR,
 )
 from .earthquake.eew import EEW, EarthquakeData
 from .earthquake.location import REGIONS
@@ -56,12 +57,19 @@ async def async_setup_entry(
     name: str = domain_data[TREM_NAME]
     coordinator: tremUpdateCoordinator = domain_data[TREM_COORDINATOR]
 
-    devices = tremSensor(hass, name, config, coordinator)
-    async_add_devices([devices], update_before_add=True)
+    earthquake_device = earthquakeSensor(hass, name, config, coordinator)
+    tsunami_device = tsunamiSensor(hass, name, config, coordinator)
+    async_add_devices(
+        [
+            earthquake_device,
+            tsunami_device,
+        ],
+        update_before_add=True,
+    )
 
 
-class tremSensor(SensorEntity):
-    """Defines a TREM sensor entity."""
+class earthquakeSensor(SensorEntity):
+    """Defines a earthquake sensor entity."""
 
     def __init__(
         self,
@@ -83,19 +91,23 @@ class tremSensor(SensorEntity):
         self._preserve_data: bool = _get_config_value(config, CONF_PRESERVE_DATA, False)
         self._draw_map: bool = _get_config_value(config, CONF_DRAW_MAP, False)
 
+        modelInfo = (
+            "WebSocket" if self._coordinator.plan == "Subscribe plan" else "HTTP API"
+        )
+
         self._attr_name = f"{DEFAULT_NAME} {self._coordinator.region} Notification"
         self._attr_unique_id = f"{DEFAULT_NAME}_{self._coordinator.region}_notification"
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, config.entry_id)},
             name=name,
             manufacturer=MANUFACTURER,
-            model=f"HTTP API ({self._coordinator.plan})",
+            model=f"{modelInfo} ({self._coordinator.plan})",
         )
 
         self._state = ""
         self._attributes = {}
         self._attr_value = {}
-        for i in ATTR_LIST:
+        for i in EARTHQUAKE_ATTR:
             self._attr_value[i] = ""
 
     # async def async_update(self) -> None:
@@ -193,7 +205,134 @@ class tremSensor(SensorEntity):
             return
 
         self._attr_value = {}
-        for i in ATTR_LIST:
+        for i in EARTHQUAKE_ATTR:
+            self._attr_value[i] = ""
+        self._state = ""
+
+    async def async_added_to_hass(self) -> None:
+        """Run when this Entity has been added to HA."""
+
+        self.async_on_remove(
+            self._coordinator.async_add_listener(self._update_callback)
+        )
+
+    @property
+    def available(self):
+        """Return True if entity is available."""
+
+        if self._coordinator.retry > 1:
+            return self._coordinator.last_update_success
+
+        return True
+
+    @property
+    def state(self) -> str:
+        """Return the state of the sensor."""
+
+        return self._state
+
+    @property
+    def icon(self) -> str:
+        """Icon to use in the frontend, if any."""
+
+        return DEFAULT_ICON
+
+    @property
+    def unit_of_measurement(self):
+        """Return the unit of measurement."""
+
+        return None
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        """Return extra attributes."""
+
+        self._attributes[ATTR_ATTRIBUTION] = ATTRIBUTION
+        for k in self._attr_value:
+            self._attributes[k] = self._attr_value[k]
+        return self._attributes
+
+    @callback
+    def _update_callback(self) -> None:
+        """Handle updated data from the coordinator."""
+
+        self.async_write_ha_state()
+
+
+class tsunamiSensor(SensorEntity):
+    """Defines a tsunami sensor entity."""
+
+    def __init__(
+        self,
+        hass: HomeAssistant,
+        name: str,
+        config: ConfigEntry,
+        coordinator: tremUpdateCoordinator,
+    ) -> None:
+        """Initialize the sensor."""
+
+        self._coordinator = coordinator
+        self._hass = hass
+
+        self._tsunami: dict | None = None
+
+        self._preserve_data: bool = _get_config_value(config, CONF_PRESERVE_DATA, False)
+
+        self._attr_name = "Tsunami Notification"
+        self._attr_unique_id = "tsunami_notification"
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, config.entry_id)},
+            name=name,
+            manufacturer=MANUFACTURER,
+            model=f"WebSocket ({self._coordinator.plan})",
+        )
+
+        self._state = ""
+        self._attributes = {}
+        self._attr_value = {}
+        for i in TSUNAMI_ATTR:
+            self._attr_value[i] = ""
+
+    def update(self) -> None:
+        """Schedule a custom update via the common entity update service."""
+
+        data: list = (
+            self._coordinator.tsunamiData
+            if isinstance(self._coordinator.tsunamiData, list)
+            else []
+        )
+        if len(data) == 0:
+            return
+
+        tsunami = self._coordinator.tsunamiData
+
+        tsunamiSerial = f"{tsunami["id"]} (Serial {tsunami["serial"]})"
+        if self._tsunami is None:
+            self._tsunami = tsunami
+            old_tsunamiSerial = ""
+        else:
+            old_tsunami = self._tsunami
+            old_tsunamiSerial = f"{old_tsunami["id"]} (Serial {old_tsunami["serial"]})"
+
+        if tsunamiSerial != old_tsunamiSerial:
+            self._tsunami = tsunami
+            message = tsunami["content"]
+
+            self._state = message
+            self._attr_value[ATTR_AUTHOR] = tsunami["author"]
+            self._attr_value[ATTR_ID] = tsunamiSerial
+
+            _notify_message(
+                self._hass, f"{tsunami["id"]}_{tsunami["serial"]}", CLIENT_NAME, message
+            )
+
+        self._attr_value[ATTR_NODE] = self._coordinator.station
+
+        if self._preserve_data:
+            return
+
+        self._attr_value = {}
+        for i in TSUNAMI_ATTR:
             self._attr_value[i] = ""
         self._state = ""
 

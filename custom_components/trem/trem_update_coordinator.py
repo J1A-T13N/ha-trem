@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import asyncio
 from asyncio.exceptions import TimeoutError
 from datetime import timedelta
 from io import BytesIO
@@ -31,14 +30,8 @@ from .const import (
     HA_USER_AGENT,
     REQUEST_TIMEOUT,
 )
-from .exceptions import (
-    AuthorizationFailed,
-    AuthorizationLimit,
-    MembershipExpired,
-    RateLimitExceeded,
-    WebSocketClosure,
-)
-from .session import WebSocketClient
+from .exceptions import WebSocketClosure
+from .session import WebSocketConnection
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -58,7 +51,7 @@ class tremUpdateCoordinator(DataUpdateCoordinator):
         self._hass = hass
         self._update_interval = update_interval
 
-        self._connection: WebSocketClient | None = None
+        self._connection: WebSocketConnection | None = None
         self.session = async_get_clientsession(hass)
         self._credentials: dict | None = None
         self.plan: str = "Free plan"
@@ -92,6 +85,7 @@ class tremUpdateCoordinator(DataUpdateCoordinator):
         self._protocol = "WebSocket" if self.plan == "Subscribe plan" else "Http(s) API"
         self.retry: int = 0
         self.earthquakeData: list = []
+        self.tsunamiData: list = []
 
         super().__init__(
             hass,
@@ -110,16 +104,11 @@ class tremUpdateCoordinator(DataUpdateCoordinator):
             )
 
     async def _async_update_data(self) -> Any | None:
-        """Poll earthquake data from Http(s) or WS api."""
-
-        self.earthquakeData = []
+        """Poll earthquake data from Http(s) or Websocket api."""
 
         if self.retry >= 5:
-            self.update_interval = timedelta(seconds=300)
+            self.update_interval = timedelta(seconds=86400)
             raise UpdateFailed
-
-        if self.retry > 0:
-            await self.switch_node()
 
         response: ClientResponse | None = None
         if self._credentials is None:
@@ -140,104 +129,72 @@ class tremUpdateCoordinator(DataUpdateCoordinator):
                 )
             except ClientConnectorError as ex:
                 self.retry = self.retry + 1
-                self.update_interval = timedelta(seconds=60)
+
                 _LOGGER.error(
                     f"Failed fetching data from Http(s) API({self.station}), {ex.strerror}. Retry {self.retry}/5..."
                 )
-                raise UpdateFailed(ex) from ex
             except TimeoutError as ex:
                 self.retry = self.retry + 1
-                self.update_interval = timedelta(seconds=60)
+
                 _LOGGER.error(
                     f"Failed fetching data from Http(s) API({self.station}), {ex.strerror}. Retry {self.retry}/5..."
                 )
-                raise UpdateFailed(ex) from ex
-            except Exception as ex:
+            except Exception:
                 _LOGGER.exception(
                     f"An unexpected exception occurred fetching the data from Http(s) API({self.station})."
                 )
-                raise UpdateFailed(ex) from ex
             else:
                 if response.ok:
                     self.retry = 0
-                    self.update_interval = self._update_interval
 
                     self.earthquakeData = await response.json()
                 else:
                     self.retry = self.retry + 1
-                    self.update_interval = timedelta(seconds=30)
 
                     _LOGGER.error(
                         f"Failed fetching data from Http(s) API({self.station}), (HTTP Status Code = {response.status}). Retry {self.retry}/5..."
                     )
-                    raise UpdateFailed
         else:
-            errCLS: Any | None = None
-            errMSG: str | None = None
-
-            try:
-                if self._connection is None:
-                    self._connection = WebSocketClient(
+            if self._connection is None:
+                try:
+                    self._connection = WebSocketConnection(
                         self._hass, self._base_url, self._credentials
                     )
-                    await asyncio.gather(*[self._connection.connect()])
+                    self._hass.async_create_task(self._connection.connect())
 
-            except AuthorizationFailed as ex:  # 401
-                self.retry = 5
-                errMSG = "The account does not exist or password is invalid."
-                errCLS = ex
+                except WebSocketClosure:
+                    _LOGGER.error("The websocket server has closed the connection.")
 
-            except AuthorizationLimit as ex:  # 400
-                self.retry = self.retry + 1
-                self.update_interval = timedelta(seconds=60)
-                errMSG = (
-                    "The number of available authorization has reached the upper limit."
-                )
-                errCLS = ex
+                except WebSocketError:
+                    _LOGGER.error("Websocket connection had an error.")
 
-            except MembershipExpired as ex:  # 403
-                self.retry = 5
-                errMSG = "Your VIP membership has expired, Please re-subscribe."
-                errCLS = ex
-
-            except RateLimitExceeded as ex:  # 429
-                self.retry = self.retry + 1
-                self.update_interval = timedelta(seconds=60)
-                errMSG = "Too many requests in a given time."
-                errCLS = ex
-
-            except WebSocketClosure as ex:
-                self.retry = self.retry + 1
-                self.update_interval = timedelta(seconds=60)
-                errMSG = "The websocket server has closed the connection."
-                errCLS = ex
-
-            except WebSocketError as ex:
-                self.retry = self.retry + 1
-                self.update_interval = timedelta(seconds=60)
-                errMSG = f"Websocket connection had an error: {ex}."
-                errCLS = ex
-
-            except TypeError as ex:
-                self.retry = self.retry + 1
-                self.update_interval = timedelta(seconds=60)
-                errMSG = ex.__str__
-                errCLS = ex
-
+                except Exception:
+                    _LOGGER.exception(
+                        "An unexpected exception occurred on the websocket client."
+                    )
             else:
+                self.earthquakeData = self._connection.earthquakeData
+                self.tsunamiData = self._connection.tsunamiData
+
                 if len(self._connection.subscrib_service) > 0:
                     self.retry = 0
-                    self.update_interval = self._update_interval
-                    self.earthquakeData = self._connection.earthquakeData
+                else:
+                    self.retry = self.retry + 1
 
-            if errMSG is not None:
-                await _notify_message(
-                    self._hass, errCLS.__class__.__name__, CLIENT_NAME, errMSG
-                )
-                _LOGGER.error(errMSG)
+                    await _notify_message(
+                        self._hass,
+                        "MembershipExpired",
+                        CLIENT_NAME,
+                        "Your VIP membership has expired, Please re-subscribe.",
+                    )
 
-            if errCLS is not None:
-                raise UpdateFailed(errCLS) from errCLS
+        if self.retry == 0:
+            self.update_interval = self._update_interval
+        else:
+            self.update_interval = timedelta(seconds=60)
+
+            await self.switch_node()
+            raise UpdateFailed
 
         return self
 

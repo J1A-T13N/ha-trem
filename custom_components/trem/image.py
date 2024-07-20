@@ -44,11 +44,11 @@ async def async_setup_entry(
         name: str = domain_data[TREM_NAME]
         coordinator: tremUpdateCoordinator = domain_data[TREM_COORDINATOR]
 
-        device = tremImage(hass, name, config, coordinator)
+        device = earthquakeImage(hass, name, config, coordinator)
         async_add_devices([device], update_before_add=True)
 
 
-class tremImage(ImageEntity):
+class earthquakeImage(ImageEntity):
     """Defines a TREM image entity."""
 
     def __init__(

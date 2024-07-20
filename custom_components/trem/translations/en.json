@@ -21,7 +21,7 @@
           "preserve_data": "Preserve data",
           "draw_map": "Draw map (This feature affects performance)"
         },
-        "description": "This plan data is updated every 5 second.\nPlease read the following Terms of Service (https://exptech.com.tw/tos) carefully.\nGo to https://exptech.com.tw/pricing to subscribe"
+        "description": "This plan data is updated every 5 second.\nPlease read the following Terms of Service (https://exptech.com.tw/tos) carefully."
       },
       "cloud": {
         "title": "WebSocket (Subscribe plan)",
@@ -32,7 +32,7 @@
           "preserve_data": "Preserve data",
           "draw_map": "Draw map (This feature affects performance)"
         },
-        "description": "This plan data is updated every 1 second.\nPlease read the following Terms of Service (https://exptech.com.tw/tos) carefully."
+        "description": "This plan data is updated every 1 second.\nPlease read the following Terms of Service (https://exptech.com.tw/tos) carefully.\nGo to https://exptech.com.tw/pricing to subscribe"
       }
     }
   },
