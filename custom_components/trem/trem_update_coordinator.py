@@ -26,9 +26,12 @@ from .const import (
     BASE_WS,
     CLIENT_NAME,
     CONF_PASS,
+    CUSTOMIZE_PLAN,
     DOMAIN,
+    FREE_PLAN,
     HA_USER_AGENT,
     REQUEST_TIMEOUT,
+    SUBSCRIBE_PLAN,
 )
 from .exceptions import WebSocketClosure
 from .session import WebSocketConnection
@@ -51,10 +54,10 @@ class tremUpdateCoordinator(DataUpdateCoordinator):
         self._hass = hass
         self._update_interval = update_interval
 
-        self._connection: WebSocketConnection | None = None
+        self.connection: WebSocketConnection | None = None
         self.session = async_get_clientsession(hass)
         self._credentials: dict | None = None
-        self.plan: str = "Free plan"
+        self.plan: str = FREE_PLAN
 
         self.region = region
         self.map: BytesIO | None = None
@@ -62,7 +65,7 @@ class tremUpdateCoordinator(DataUpdateCoordinator):
 
         if isinstance(base_info, dict):
             station, base_url = random.choice(list(BASE_WS.items()))
-            self.plan = "Subscribe plan"
+            self.plan = SUBSCRIBE_PLAN
             self._credentials = {
                 CONF_EMAIL: base_info[CONF_EMAIL],
                 CONF_PASS: base_info[CONF_PASS],
@@ -73,16 +76,16 @@ class tremUpdateCoordinator(DataUpdateCoordinator):
         elif validators.url(base_info):
             station = base_info
             base_url = base_info
-            self.plan = "Customize"
+            self.plan = CUSTOMIZE_PLAN
         else:
             station, base_url = random.choice(list(BASE_URLS.items()))
         self.station: str = station
         self._base_url: str = (
             base_url
-            if self.plan == "Customize"
+            if self.plan == CUSTOMIZE_PLAN
             else f"{base_url}/api/v1/eq/eew?type=cwa"
         )
-        self._protocol = "WebSocket" if self.plan == "Subscribe plan" else "Http(s) API"
+        self._protocol = "Websocket" if self.plan == SUBSCRIBE_PLAN else "Http(s)"
         self.retry: int = 0
         self.earthquakeData: list = []
         self.tsunamiData: list = []
@@ -94,14 +97,9 @@ class tremUpdateCoordinator(DataUpdateCoordinator):
             update_interval=self._update_interval,
         )
 
-        if self.plan == "Subscribe plan":
-            _LOGGER.debug(
-                f"Fetching data from Websocket ({self.station}), EEW({self.region}) Monitoring..."
-            )
-        else:
-            _LOGGER.debug(
-                f"Fetching data from Http(s) API({self.station}), EEW({self.region}) Monitoring..."
-            )
+        _LOGGER.debug(
+            f"{self._protocol}: Fetching data from {self.station}, EEW({self.region}) Monitoring..."
+        )
 
     async def _async_update_data(self) -> Any | None:
         """Poll earthquake data from Http(s) or Websocket api."""
@@ -155,12 +153,12 @@ class tremUpdateCoordinator(DataUpdateCoordinator):
                         f"Failed fetching data from Http(s) API({self.station}), (HTTP Status Code = {response.status}). Retry {self.retry}/5..."
                     )
         else:
-            if self._connection is None:
+            if self.connection is None:
                 try:
-                    self._connection = WebSocketConnection(
+                    self.connection = WebSocketConnection(
                         self._hass, self._base_url, self._credentials
                     )
-                    self._hass.async_create_task(self._connection.connect())
+                    self._hass.async_create_task(self.connection.connect())
 
                 except WebSocketClosure:
                     _LOGGER.error("The websocket server has closed the connection.")
@@ -173,10 +171,10 @@ class tremUpdateCoordinator(DataUpdateCoordinator):
                         "An unexpected exception occurred on the websocket client."
                     )
             else:
-                self.earthquakeData = self._connection.earthquakeData
-                self.tsunamiData = self._connection.tsunamiData
+                self.earthquakeData = self.connection.earthquakeData
+                self.tsunamiData = self.connection.tsunamiData
 
-                if len(self._connection.subscrib_service) > 0:
+                if len(self.connection.subscrib_service) > 0:
                     self.retry = 0
                 else:
                     self.retry = self.retry + 1
@@ -201,16 +199,16 @@ class tremUpdateCoordinator(DataUpdateCoordinator):
     async def switch_node(self) -> str | None:
         """Switch the Http(s) api node for fetching earthquake data."""
 
-        if self.plan == "Customize":
+        if self.plan == CUSTOMIZE_PLAN:
             return None
 
-        if self.plan == "Free plan":
+        if self.plan == FREE_PLAN:
             station, base_url = random.choice(list(BASE_URLS.items()))
             _LOGGER.warning(
                 f"Switch Http(s) API {self.station} to {station}, Try to fetching data..."
             )
 
-        if self.plan == "Subscribe plan":
+        if self.plan == SUBSCRIBE_PLAN:
             station, base_url = random.choice(list(BASE_WS.items()))
             _LOGGER.warning(
                 f"Switch WebSocket API {self.station} to {station}, Try to fetching data..."

@@ -10,7 +10,7 @@ from typing import Any
 from homeassistant.components import persistent_notification
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import ATTR_ATTRIBUTION, CONF_REGION
+from homeassistant.const import ATTR_ATTRIBUTION, CONF_EMAIL, CONF_REGION
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity import DeviceInfo
 
@@ -59,14 +59,21 @@ async def async_setup_entry(
     coordinator: tremUpdateCoordinator = domain_data[TREM_COORDINATOR]
 
     earthquake_device = earthquakeSensor(hass, name, config, coordinator)
-    tsunami_device = tsunamiSensor(hass, name, config, coordinator)
-    async_add_devices(
-        [
-            earthquake_device,
-            tsunami_device,
-        ],
-        update_before_add=True,
-    )
+    not_membership = _get_config_value(config, CONF_EMAIL, False) is False
+    if not_membership:
+        async_add_devices(
+            [earthquake_device],
+            update_before_add=True,
+        )
+    else:
+        tsunami_device = tsunamiSensor(hass, name, config, coordinator)
+        async_add_devices(
+            [
+                earthquake_device,
+                tsunami_device,
+            ],
+            update_before_add=True,
+        )
 
 
 class earthquakeSensor(SensorEntity):
@@ -92,17 +99,13 @@ class earthquakeSensor(SensorEntity):
         self._preserve_data: bool = _get_config_value(config, CONF_PRESERVE_DATA, False)
         self._draw_map: bool = _get_config_value(config, CONF_DRAW_MAP, False)
 
-        modelInfo = (
-            "WebSocket" if self._coordinator.plan == "Subscribe plan" else "HTTP API"
-        )
-
         self._attr_name = f"{DEFAULT_NAME} {self._coordinator.region} Notification"
         self._attr_unique_id = f"{DEFAULT_NAME}_{self._coordinator.region}_notification"
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, config.entry_id)},
             name=name,
             manufacturer=MANUFACTURER,
-            model=f"{modelInfo} ({self._coordinator.plan})",
+            model=self._coordinator.plan,
         )
 
         self._state = ""
@@ -285,7 +288,7 @@ class tsunamiSensor(SensorEntity):
             identifiers={(DOMAIN, config.entry_id)},
             name=name,
             manufacturer=MANUFACTURER,
-            model=f"WebSocket ({self._coordinator.plan})",
+            model=self._coordinator.plan,
         )
 
         self._state = ""

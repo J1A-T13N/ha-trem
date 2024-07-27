@@ -77,7 +77,7 @@ class earthquakeImage(ImageEntity):
             identifiers={(DOMAIN, config.entry_id)},
             name=name,
             manufacturer=MANUFACTURER,
-            model=f"HTTP API ({self._coordinator.plan})",
+            model=self._coordinator.plan,
         )
 
         self.image: BytesIO = BytesIO()

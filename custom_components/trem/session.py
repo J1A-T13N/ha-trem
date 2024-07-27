@@ -124,52 +124,58 @@ class WebSocketConnection:
 
     async def _recv(self):
         while self.ready:
-            msg = await self._connection.receive()
-            if msg:
-                msg_data: dict = json.loads(msg.data)
-                msg_type: WSMsgType = msg.type
-            else:
-                continue
+            try:
+                msg = await self._connection.receive()
+                if msg:
+                    msg_data: dict = json.loads(msg.data)
+                    msg_type: WSMsgType = msg.type
+                else:
+                    continue
 
-            message = msg.json()
-            _LOGGER.debug(f"Received: {message}.")
+                message = msg.json()
+                _LOGGER.debug(f"Received: {message}.")
 
-            if msg_type in (
-                WSMsgType.CLOSE,
-                WSMsgType.CLOSED,
-                WSMsgType.CLOSING,
-            ):
-                raise WebSocketClosure
+                if msg_type in (
+                    WSMsgType.CLOSE,
+                    WSMsgType.CLOSED,
+                    WSMsgType.CLOSING,
+                ):
+                    raise WebSocketClosure
 
-            if msg_type == WSMsgType.ERROR:
-                handle_error = await self._handle_error(msg_data)
-                if not handle_error:
-                    raise WebSocketError(msg)
+                if msg_type == WSMsgType.ERROR:
+                    handle_error = await self._handle_error(msg_data)
+                    if not handle_error:
+                        raise WebSocketError(msg)
 
-            data_type = msg_data.get("type")
-            if data_type == WebSocketEvent.VERIFY.value:
-                self._access_token = await self._fetchToken(
-                    credentials=self._credentials
-                )
-                payload: dict = {
-                    "key": self._access_token,
-                    "service": self._register_service,
-                }
-                payload["type"] = "start"
-                await self._connection.send_json(payload)
+                data_type = msg_data.get("type")
+                if data_type == WebSocketEvent.VERIFY.value:
+                    self._access_token = await self._fetchToken(
+                        credentials=self._credentials
+                    )
+                    payload: dict = {
+                        "key": self._access_token,
+                        "service": self._register_service,
+                    }
+                    payload["type"] = "start"
+                    await self._connection.send_json(payload)
 
-                _LOGGER.debug("Sent: %s.", json.dumps(payload))
+                    _LOGGER.debug("Sent: %s.", json.dumps(payload))
 
-                data = await asyncio.wait_for(self.wait_for_verify(), timeout=60)
-                self.subscrib_service = data["list"]
+                    data = await asyncio.wait_for(self.wait_for_verify(), timeout=60)
+                    self.subscrib_service = data["list"]
 
-            if data_type == WebSocketEvent.EEW.value:
-                if msg_data["author"] == "cwa":
-                    self.earthquakeData = msg_data
+                if data_type == WebSocketEvent.EEW.value:
+                    if msg_data["author"] == "cwa":
+                        self.earthquakeData = msg_data
 
-            if data_type == WebSocketEvent.TSUNAMI.value:
-                if msg_data["author"] == "cwa":
-                    self.tsunamiData = msg_data
+                if data_type == WebSocketEvent.TSUNAMI.value:
+                    if msg_data["author"] == "cwa":
+                        self.tsunamiData = msg_data
+            except ConnectionResetError:
+                raise WebSocketClosure  # noqa: B904
+            except TypeError:
+                _LOGGER.error("Received non-JSON data from server.")
+                break
 
         await self._disconnected()
 

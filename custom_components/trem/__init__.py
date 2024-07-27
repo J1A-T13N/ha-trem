@@ -110,6 +110,15 @@ async def async_update_options(hass: HomeAssistant, config: ConfigEntry):
 async def async_unload_entry(hass: HomeAssistant, config: ConfigEntry):
     """Unload a config entry."""
 
+    _email = _get_config_value(config, CONF_EMAIL, None)
+    if _email is None:
+        pass
+    else:
+        coordinator: tremUpdateCoordinator = hass.data[DOMAIN][config.entry_id][
+            TREM_COORDINATOR
+        ]
+        await coordinator.connection.close()
+
     unload_ok = all(
         await asyncio.gather(
             *[

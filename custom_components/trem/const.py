@@ -18,7 +18,7 @@ ISSUE_URL = f"{PROJECT_URL}issues"
 MIN_HA_MAJ_VER = 2024
 MIN_HA_MIN_VER = 3
 __min_ha_version__ = f"{MIN_HA_MAJ_VER}.{MIN_HA_MIN_VER}.0"
-__version__ = "1.0.6"
+__version__ = "1.0.7"
 
 # General sensor attributes
 ATTRIBUTION = "Powered by ExpTech Studio"
@@ -94,7 +94,10 @@ BASE_WS = {
 }
 DEFAULT_MAX_MSG_SIZE = 16 * 1024 * 1024
 
-# Message
+# STRINGS
+CUSTOMIZE_PLAN = "Customize (Free Plan)"
+FREE_PLAN = "Http(s) API (Free Plan)"
+SUBSCRIBE_PLAN = "WebSocket (Subscribe Plan)"
 
 WS_MSG_TOO_BIG = (
     f"Please consider increasing message size with `{DEFAULT_MAX_MSG_SIZE}`."

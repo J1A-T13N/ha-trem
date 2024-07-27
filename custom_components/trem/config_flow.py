@@ -41,16 +41,18 @@ from .const import (
     CONF_PASS,
     CONF_PRESERVE_DATA,
     DOMAIN,
+    FREE_PLAN,
     HA_USER_AGENT,
     LOGIN_URLS,
     REQUEST_TIMEOUT,
+    SUBSCRIBE_PLAN,
     __version__,
 )
 from .exceptions import AccountInvalid, CannotConnect, RegionInvalid
 
 ACTIONS = {
-    "customizing": "HTTP API (Free plan)",
-    "cloud": "WebSocket (Subscribe plan)",
+    "customizing": FREE_PLAN,
+    "cloud": SUBSCRIBE_PLAN,
 }
 
 _LOGGER = logging.getLogger(__name__)
