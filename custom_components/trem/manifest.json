@@ -2,7 +2,7 @@
   "codeowners": ["@J1A-T13N", "@watermelon1024"],
   "domain": "trem",
   "name": "Taiwan Real-time Earthquake Monitoring",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "config_flow": true,
   "documentation": "https://github.com/J1A-T13N/ha-trem/blob/main/README.md",
   "issue_tracker": "https://github.com/J1A-T13N/ha-trem/issues",

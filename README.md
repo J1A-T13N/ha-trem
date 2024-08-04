@@ -2,14 +2,16 @@
 
 ![Logo](https://raw.githubusercontent.com/J1A-T13N/ha-trem/main/docs/media/logo.png)
 
-[![License][license-shield]](LICENSE)
-[![BuyMeCoffee][buymecoffeebadge]][buymecoffee]
-
 [![GitHub Release][releases-shield]][releases]
 [![hacs_custom][hacs_custom_shield]][hacs_custom]
+[![License][license-shield]](LICENSE)
 
-[![Project Maintenance][maintenance-shield]][user_profile]
-[![Project Maintenance][maintenance2-shield]][user2_profile]
+[![Stargazers][stars-shield]][stars-url]
+[![Issues][issues-shield]][issues-url]
+[![Contributors][contributors-shield]][contributors-url]
+
+[![BuyMeCoffee][buymecoffee-shield]][buymecoffee]
+
 <hr>
 
 English | [繁體中文](README_zhHant.md)<br>
@@ -19,6 +21,15 @@ English | [繁體中文](README_zhHant.md)<br>
 
 ![config_flow_image](https://github.com/J1A-T13N/ha-trem/assets/29163857/a6f4cc49-0521-4f27-a894-9fb1273be1cf)
 ![simulator_earthquake_demo](https://github.com/J1A-T13N/ha-trem/assets/29163857/b62dab7a-2935-4477-8297-f7e275df0a81)
+
+
+<hr>
+<br>
+
+
+> [!IMPORTANT]
+>The source of earthquake early warning is provided by ExpTech Studio and is for reference only.<br>
+>The actual results are subject to the content published by [CWA](https://scweb.cwa.gov.tw/en-US).
 
 
 <hr>
@@ -114,8 +125,8 @@ English | [繁體中文](README_zhHant.md)<br>
 
 ## Contribution
 
-- ExpTech Studio `HTTP API`
-- watermelon1024 `Python Function`
+- ExpTech Studio `EEW Source`
+- watermelon1024 `Contributor`
 - kukuxx `Test Partner`
 
 <p>I would like to thank everyone who has helped me and every partner in the community for their generous help.</p>
@@ -128,20 +139,11 @@ English | [繁體中文](README_zhHant.md)<br>
 
 - [x] Integration: Convert components from sensor to platform.
 - [x] Integration: Add isoseismal map image.
-- [ ] ~~Integration Features: Earthquake early warning by tracker device or person.~~
 - [x] Integration Service: Simulator earthquake.
 - [x] Integration Service: Save as image.
 - [x] Integration Service: Reload entity.
-- [ ] ExptechTW Features: Earthquake early warning Source from WebSocket.
-- [ ] ExptechTW Features: Exptech Subscribe (etc. TREM-Net Earthquake early warning listener).
-
-<hr>
-<br>
-
-
-> [!IMPORTANT]
->The source of earthquake early warning is provided by ExpTech Studio and is for reference only.<br>
->The actual results are subject to the content published by [CWA](https://scweb.cwa.gov.tw/en-US).
+- [x] ExptechTW Features: Earthquake early warning Source from WebSocket. (Exptech VIP Only)
+- [ ] ExptechTW Features: TREM-Net EEW、RTS...etc. (Exptech VIP Only)
 
 <hr>
 <br>
@@ -161,20 +163,16 @@ English | [繁體中文](README_zhHant.md)<br>
 AGPL-3.0 license
 
 
-[black]: https://github.com/psf/black
-[black-shield]: https://img.shields.io/badge/code%20style-black-000000.svg?style=for-the-badge
-[buymecoffee]: https://www.buymeacoffee.com/j1at13n
-[buymecoffeebadge]: https://img.shields.io/badge/buy%20me%20a%20coffee-donate-yellow.svg?style=for-the-badge
-[commits-shield]: https://img.shields.io/github/commit-activity/y/J1A-T13N/ha-trem.svg?style=for-the-badge
-[commits]: https://github.com/J1A-T13N/ha-trem/commits/main
-[hacs_custom]: https://hacs.xyz/docs/faq/custom_repositories
-[hacs_custom_shield]: https://img.shields.io/badge/HACS-Custom-orange.svg?style=for-the-badge
-[license-shield]: https://img.shields.io/github/license/J1A-T13N/ha-trem.svg?style=for-the-badge
-[maintenance-shield]: https://img.shields.io/badge/maintainer-%40jiatien-blue.svg?style=for-the-badge
-[maintenance2-shield]: https://img.shields.io/badge/maintainer-%40watermelon-orange.svg?style=for-the-badge
-[pre-commit]: https://github.com/pre-commit/pre-commit
-[pre-commit-shield]: https://img.shields.io/badge/pre--commit-enabled-brightgreen?style=for-the-badge
 [releases-shield]: https://img.shields.io/github/release/J1A-T13N/ha-trem.svg?style=for-the-badge
 [releases]: https://github.com/J1A-T13N/ha-trem/releases
-[user_profile]: https://github.com/J1A-T13N
-[user2_profile]: https://github.com/watermelon1024
+[hacs_custom_shield]: https://img.shields.io/badge/HACS-Custom-orange.svg?style=for-the-badge
+[hacs_custom]: https://hacs.xyz/docs/faq/custom_repositories
+[stars-shield]: https://img.shields.io/github/stars/J1A-T13N/ha-trem.svg?style=for-the-badge
+[stars-url]: https://github.com/watermelon1024/EEW/stargazers
+[issues-shield]: https://img.shields.io/github/issues/J1A-T13N/ha-trem.svg?style=for-the-badge
+[issues-url]: https://github.com/J1A-T13N/ha-trem/issues
+[contributors-shield]: https://img.shields.io/github/contributors/J1A-T13N/ha-trem.svg?style=for-the-badge
+[contributors-url]: https://github.com/J1A-T13N/ha-trem/graphs/contributors
+[license-shield]: https://img.shields.io/github/license/J1A-T13N/ha-trem.svg?style=for-the-badge
+[buymecoffee-shield]: https://img.shields.io/badge/buy%20me%20a%20coffee-donate-yellow.svg?style=for-the-badge
+[buymecoffee]: https://www.buymeacoffee.com/j1at13n

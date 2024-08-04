@@ -87,8 +87,9 @@ class tremUpdateCoordinator(DataUpdateCoordinator):
         )
         self._protocol = "Websocket" if self.plan == SUBSCRIBE_PLAN else "Http(s)"
         self.retry: int = 0
-        self.earthquakeData: list = []
-        self.tsunamiData: list = []
+        self.earthquakeData: dict | list = {}
+        self.rtsData: dict = {}
+        self.tsunamiData: dict = {}
 
         super().__init__(
             hass,
@@ -152,26 +153,28 @@ class tremUpdateCoordinator(DataUpdateCoordinator):
                     _LOGGER.error(
                         f"Failed fetching data from Http(s) API({self.station}), (HTTP Status Code = {response.status}). Retry {self.retry}/5..."
                     )
+        elif self.connection is None:
+            try:
+                self.connection = WebSocketConnection(
+                    self._hass, self._base_url, self._credentials
+                )
+                self._hass.async_create_task(self.connection.connect())
+
+            except WebSocketClosure:
+                _LOGGER.error("The websocket server has closed the connection.")
+
+            except WebSocketError:
+                _LOGGER.error("Websocket connection had an error.")
+
+            except Exception:
+                _LOGGER.exception(
+                    "An unexpected exception occurred on the websocket client."
+                )
         else:
-            if self.connection is None:
-                try:
-                    self.connection = WebSocketConnection(
-                        self._hass, self._base_url, self._credentials
-                    )
-                    self._hass.async_create_task(self.connection.connect())
-
-                except WebSocketClosure:
-                    _LOGGER.error("The websocket server has closed the connection.")
-
-                except WebSocketError:
-                    _LOGGER.error("Websocket connection had an error.")
-
-                except Exception:
-                    _LOGGER.exception(
-                        "An unexpected exception occurred on the websocket client."
-                    )
-            else:
+            isReady = self.connection.ready()
+            if isReady:
                 self.earthquakeData = self.connection.earthquakeData
+                self.rtsData = self.connection.rtsData
                 self.tsunamiData = self.connection.tsunamiData
 
                 if len(self.connection.subscrib_service) > 0:
@@ -185,10 +188,13 @@ class tremUpdateCoordinator(DataUpdateCoordinator):
                         CLIENT_NAME,
                         "Your VIP membership has expired, Please re-subscribe.",
                     )
+            else:
+                raise UpdateFailed
 
         if self.retry == 0:
             self.update_interval = self._update_interval
-        else:
+
+        if self.retry > 0:
             self.update_interval = timedelta(seconds=60)
 
             await self.switch_node()
@@ -202,20 +208,18 @@ class tremUpdateCoordinator(DataUpdateCoordinator):
         if self.plan == CUSTOMIZE_PLAN:
             return None
 
-        if self.plan == FREE_PLAN:
-            station, base_url = random.choice(list(BASE_URLS.items()))
-            _LOGGER.warning(
-                f"Switch Http(s) API {self.station} to {station}, Try to fetching data..."
-            )
-
+        tmpStations: dict = BASE_URLS.items()
         if self.plan == SUBSCRIBE_PLAN:
-            station, base_url = random.choice(list(BASE_WS.items()))
-            _LOGGER.warning(
-                f"Switch WebSocket API {self.station} to {station}, Try to fetching data..."
-            )
+            tmpStations = BASE_WS.items()
+        tmpStations.pop(self.station)
 
+        station, base_url = random.choice(list(tmpStations))
         self.station = station
         self._base_url = base_url
+
+        _LOGGER.warning(
+            f"Switch Station {self.station} to {station}, Try to fetching data..."
+        )
 
         return station
 

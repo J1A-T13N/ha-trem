@@ -2,14 +2,16 @@
 
 ![Logo](https://raw.githubusercontent.com/J1A-T13N/ha-trem/main/docs/media/logo.png)
 
-[![License][license-shield]](LICENSE)
-[![BuyMeCoffee][buymecoffeebadge]][buymecoffee]
-
 [![GitHub Release][releases-shield]][releases]
 [![hacs_custom][hacs_custom_shield]][hacs_custom]
+[![License][license-shield]](LICENSE)
 
-[![Project Maintenance][maintenance-shield]][user_profile]
-[![Project Maintenance][maintenance2-shield]][user2_profile]
+[![Stargazers][stars-shield]][stars-url]
+[![Issues][issues-shield]][issues-url]
+[![Contributors][contributors-shield]][contributors-url]
+
+[![BuyMeCoffee][buymecoffee-shield]][buymecoffee]
+
 <hr>
 
 [English](README.md) | 繁體中文<br>
@@ -19,6 +21,14 @@
 
 ![config_flow_image](https://github.com/J1A-T13N/ha-trem/assets/29163857/a6f4cc49-0521-4f27-a894-9fb1273be1cf)
 ![simulator_earthquake_demo](https://github.com/J1A-T13N/ha-trem/assets/29163857/b62dab7a-2935-4477-8297-f7e275df0a81)
+
+<hr>
+<br>
+
+
+> [!IMPORTANT]
+>示警資料來源由 ExpTech Studio 提供，僅供參考，<br>
+>實際結果依 [中央氣象局](https://scweb.cwa.gov.tw/en-US) 公佈之內容為準。
 
 <hr>
 <br>
@@ -108,9 +118,9 @@
 
 ## 貢獻者
 
-- ExpTech Studio 探索科技 `示警資料`
-- watermelon1024 `計算程式`
-- kukuxx `解決辦法提供者`
+- ExpTech Studio 探索科技 `資料來源`
+- watermelon1024 `程式貢獻`
+- kukuxx `測試夥伴`
 
 <p>在此感謝每一位幫助過我，及社群上的每一位夥伴，不吝給予協助。</p>
 
@@ -122,20 +132,11 @@
 
 - [x] Integration 相關: Convert components from sensor to platform.
 - [x] Integration 功能: 新增等震圖.
-- [ ] ~~Integration 功能: 使用者位置或裝置追蹤計算預計震度即抵達時間.~~
 - [x] Integration 功能: 模擬地震 (用於測試自動化)。
 - [x] Integration 服務: 另存等震圖.
 - [x] Integration 服務: 重新載入整合.
-- [ ] ExptechTW 訂閱功能: 使用WebSocket作為地震速報來源，減少流量及延遲。
-- [ ] ExptechTW 訂閱功能: 更多訂閱方案 (例如: TREM-Net地震速報網)。
-
-<hr>
-<br>
-
-
-> [!IMPORTANT]
->示警資料來源由 ExpTech Studio 提供，僅供參考，<br>
->實際結果依 [中央氣象局](https://scweb.cwa.gov.tw/en-US) 公佈之內容為準。
+- [x] ExptechTW 訂閱功能: 使用WebSocket作為地震速報來源，減少流量及延遲。 (Exptech VIP 資格)
+- [ ] ExptechTW 訂閱功能: TREM-Net EEW、RTS...等。 (Exptech VIP 資格)
 
 <hr>
 <br>
@@ -155,20 +156,16 @@
 AGPL-3.0 license
 
 
-[black]: https://github.com/psf/black
-[black-shield]: https://img.shields.io/badge/code%20style-black-000000.svg?style=for-the-badge
-[buymecoffee]: https://www.buymeacoffee.com/j1at13n
-[buymecoffeebadge]: https://img.shields.io/badge/buy%20me%20a%20coffee-donate-yellow.svg?style=for-the-badge
-[commits-shield]: https://img.shields.io/github/commit-activity/y/J1A-T13N/ha-trem.svg?style=for-the-badge
-[commits]: https://github.com/J1A-T13N/ha-trem/commits/main
-[hacs_custom]: https://hacs.xyz/docs/faq/custom_repositories
-[hacs_custom_shield]: https://img.shields.io/badge/HACS-Custom-orange.svg?style=for-the-badge
-[license-shield]: https://img.shields.io/github/license/J1A-T13N/ha-trem.svg?style=for-the-badge
-[maintenance-shield]: https://img.shields.io/badge/maintainer-%40jiatien-blue.svg?style=for-the-badge
-[maintenance2-shield]: https://img.shields.io/badge/maintainer-%40watermelon-orange.svg?style=for-the-badge
-[pre-commit]: https://github.com/pre-commit/pre-commit
-[pre-commit-shield]: https://img.shields.io/badge/pre--commit-enabled-brightgreen?style=for-the-badge
 [releases-shield]: https://img.shields.io/github/release/J1A-T13N/ha-trem.svg?style=for-the-badge
 [releases]: https://github.com/J1A-T13N/ha-trem/releases
-[user_profile]: https://github.com/J1A-T13N
-[user2_profile]: https://github.com/watermelon1024
+[hacs_custom_shield]: https://img.shields.io/badge/HACS-Custom-orange.svg?style=for-the-badge
+[hacs_custom]: https://hacs.xyz/docs/faq/custom_repositories
+[stars-shield]: https://img.shields.io/github/stars/J1A-T13N/ha-trem.svg?style=for-the-badge
+[stars-url]: https://github.com/watermelon1024/EEW/stargazers
+[issues-shield]: https://img.shields.io/github/issues/J1A-T13N/ha-trem.svg?style=for-the-badge
+[issues-url]: https://github.com/J1A-T13N/ha-trem/issues
+[contributors-shield]: https://img.shields.io/github/contributors/J1A-T13N/ha-trem.svg?style=for-the-badge
+[contributors-url]: https://github.com/J1A-T13N/ha-trem/graphs/contributors
+[license-shield]: https://img.shields.io/github/license/J1A-T13N/ha-trem.svg?style=for-the-badge
+[buymecoffee-shield]: https://img.shields.io/badge/buy%20me%20a%20coffee-donate-yellow.svg?style=for-the-badge
+[buymecoffee]: https://www.buymeacoffee.com/j1at13n
