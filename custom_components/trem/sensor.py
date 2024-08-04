@@ -27,7 +27,6 @@ from .const import (
     ATTR_NODE,
     ATTR_TIME,
     ATTRIBUTION,
-    CLIENT_NAME,
     CONF_DRAW_MAP,
     CONF_PRESERVE_DATA,
     DEFAULT_NAME,
@@ -92,7 +91,7 @@ class earthquakeSensor(SensorEntity):
         self._hass = hass
 
         self._eew: EEW | None = None
-        self.simulator: list | None = None
+        self.simulator: dict | None = None
         self.simulatorTime: datetime | None = None
 
         self._region: int = _get_config_value(config, CONF_REGION)
@@ -118,12 +117,15 @@ class earthquakeSensor(SensorEntity):
     def update(self) -> None:
         """Schedule a custom update via the common entity update service."""
 
-        data: list = (
-            self._coordinator.earthquakeData
-            if isinstance(self._coordinator.earthquakeData, list)
-            else []
-        )
-        if len(data) == 0 and isinstance(self.simulator, list):
+        data: dict | None = None
+        if isinstance(self._coordinator.earthquakeData, list):
+            if len(self._coordinator.earthquakeData) > 0:
+                data = self._coordinator.earthquakeData[0]
+
+        if isinstance(self._coordinator.earthquakeData, dict):
+            data = self._coordinator.earthquakeData
+
+        if data is None and isinstance(self.simulator, dict):
             data = self.simulator
             if self.simulatorTime is None:
                 self.simulatorTime = datetime.now()
@@ -133,8 +135,8 @@ class earthquakeSensor(SensorEntity):
                 self.simulator = None
 
         eew: EEW | None = None
-        if len(data) > 0:
-            eew = EEW.from_dict(data[0])
+        if data is not None and "id" in data:
+            eew = EEW.from_dict(data)
 
         if isinstance(eew, EEW):
             earthquakeSerial = f"{eew.id} (Serial {eew.serial})"
@@ -155,7 +157,7 @@ class earthquakeSensor(SensorEntity):
 
                 tz_TW = timezone(timedelta(hours=8))
                 earthquakeTime = earthquake.time.astimezone(tz_TW).strftime(
-                    "%Y/%m/%d %H:%M:%S"
+                    "%Y-%m-%d %H:%M:%S"
                 )
                 earthquakeProvider = (
                     f"{eew.provider.display_name} ({eew.provider.name})"
@@ -163,17 +165,12 @@ class earthquakeSensor(SensorEntity):
                 earthquakeLocation = f"{earthquake.location.display_name} ({earthquake.lon:.2f}, {earthquake.lat:.2f})"
 
                 if _LOGGER.level <= 20:
-                    message = "EEW alert updated\n"
-                    "--------------------------------\n"
-                    f"       ID: {earthquakeSerial}\n"
-                    f" Provider: {earthquakeProvider}\n"
-                    f" Location: {earthquakeLocation}\n"
-                    f"Magnitude: {earthquake.mag}\n"
-                    f"    Depth: {earthquake.depth}km\n"
-                    f"     Time: {earthquakeTime}\n"
-                    "--------------------------------"
+                    message = f"{earthquakeTime}左右，{earthquake.location.display_name}發生地震，震源深度{earthquake.depth}公里，地震規模M{earthquake.mag}。"
                     _notify_message(
-                        self._hass, f"{eew.id}_{eew.serial}", CLIENT_NAME, message
+                        self._hass,
+                        f"{eew.id}_{eew.serial}",
+                        f"地震速報: {earthquakeSerial}",
+                        message,
                     )
 
                 self._state = earthquakeForecast.intensity
@@ -299,36 +296,37 @@ class tsunamiSensor(SensorEntity):
 
     def update(self) -> None:
         """Schedule a custom update via the common entity update service."""
+        data: dict | None = None
+        if isinstance(self._coordinator.tsunamiData, dict):
+            data = self._coordinator.tsunamiData
 
-        data: list = (
-            self._coordinator.tsunamiData
-            if isinstance(self._coordinator.tsunamiData, list)
-            else []
-        )
-        if len(data) == 0:
-            return
+        if data is not None and "id" in data:
+            tsunami = self._coordinator.tsunamiData
 
-        tsunami = self._coordinator.tsunamiData
+            tsunamiSerial = f"{tsunami["id"]} (Serial {tsunami["serial"]})"
+            if self._tsunami is None:
+                self._tsunami = tsunami
+                old_tsunamiSerial = ""
+            else:
+                old_tsunami = self._tsunami
+                old_tsunamiSerial = (
+                    f"{old_tsunami["id"]} (Serial {old_tsunami["serial"]})"
+                )
 
-        tsunamiSerial = f"{tsunami["id"]} (Serial {tsunami["serial"]})"
-        if self._tsunami is None:
-            self._tsunami = tsunami
-            old_tsunamiSerial = ""
-        else:
-            old_tsunami = self._tsunami
-            old_tsunamiSerial = f"{old_tsunami["id"]} (Serial {old_tsunami["serial"]})"
+            if tsunamiSerial != old_tsunamiSerial:
+                self._tsunami = tsunami
+                message = tsunami["content"]
 
-        if tsunamiSerial != old_tsunamiSerial:
-            self._tsunami = tsunami
-            message = tsunami["content"]
+                self._state = message
+                self._attr_value[ATTR_AUTHOR] = tsunami["author"]
+                self._attr_value[ATTR_ID] = tsunamiSerial
 
-            self._state = message
-            self._attr_value[ATTR_AUTHOR] = tsunami["author"]
-            self._attr_value[ATTR_ID] = tsunamiSerial
-
-            _notify_message(
-                self._hass, f"{tsunami["id"]}_{tsunami["serial"]}", CLIENT_NAME, message
-            )
+                _notify_message(
+                    self._hass,
+                    f"{tsunami["id"]}_{tsunami["serial"]}",
+                    f"海嘯警報: {tsunamiSerial}",
+                    message,
+                )
 
         self._attr_value[ATTR_NODE] = self._coordinator.station
 

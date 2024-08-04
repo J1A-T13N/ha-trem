@@ -86,6 +86,14 @@ async def validate_input(
     Data has the keys from DATA_SCHEMA with values provided by the user.
     """
 
+    if CONF_REGION in user_input:
+        codes = await getRegionCode()
+        region: int = user_input[CONF_REGION]
+        if region not in codes:
+            raise RegionInvalid
+    else:
+        raise RegionInvalid
+
     if CONF_EMAIL in user_input:
         try:
             account: str = user_input[CONF_EMAIL]
@@ -111,8 +119,12 @@ async def validate_input(
 
             if response.status == HTTPStatus.BAD_REQUEST:
                 raise AccountInvalid
-        except ClientConnectorError as ex:
+        except (ClientConnectorError, TimeoutError) as ex:
             _LOGGER.error(f"Unable to login to account, server error. {ex}")
+        else:
+            return True
+
+        raise CannotConnect
 
     if CONF_NODE in user_input:
         uri: str = user_input[CONF_NODE]
@@ -142,18 +154,10 @@ async def validate_input(
                 _LOGGER.error(
                     f"Failed fetching data from HTTP API({uri}), {ex.strerror}."
                 )
+            else:
+                return True
 
             raise CannotConnect
-
-    if CONF_REGION in user_input:
-        codes = await getRegionCode()
-        region: int = user_input[CONF_REGION]
-        if region not in codes:
-            raise RegionInvalid
-    else:
-        raise RegionInvalid
-
-    return True
 
 
 class tremFlowHandler(ConfigFlow, domain=DOMAIN):
@@ -216,10 +220,10 @@ class tremFlowHandler(ConfigFlow, domain=DOMAIN):
                     title: str = codes[region_code]
 
                     return self.async_create_entry(title=title, data=user_input)
-            except RegionInvalid:
-                errors["base"] = "region_invalid"
             except CannotConnect:
                 errors["base"] = "cannot_connect"
+            except RegionInvalid:
+                errors["base"] = "region_invalid"
             except Exception:
                 _LOGGER.exception("Unexpected exception")
                 errors["base"] = "unknown"
@@ -267,6 +271,8 @@ class tremFlowHandler(ConfigFlow, domain=DOMAIN):
                     return self.async_create_entry(title=title, data=user_input)
             except AccountInvalid:
                 errors["base"] = "account_invalid"
+            except CannotConnect:
+                errors["base"] = "cannot_connect"
             except RegionInvalid:
                 errors["base"] = "region_invalid"
             except Exception:
@@ -387,6 +393,8 @@ class OptionsFlowHandler(OptionsFlow):
                     return self.async_create_entry(title=None, data=None)
             except AccountInvalid:
                 errors["base"] = "account_invalid"
+            except CannotConnect:
+                errors["base"] = "cannot_connect"
             except RegionInvalid:
                 errors["base"] = "region_invalid"
             except Exception:

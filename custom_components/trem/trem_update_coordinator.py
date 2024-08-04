@@ -152,25 +152,26 @@ class tremUpdateCoordinator(DataUpdateCoordinator):
                     _LOGGER.error(
                         f"Failed fetching data from Http(s) API({self.station}), (HTTP Status Code = {response.status}). Retry {self.retry}/5..."
                     )
+        elif self.connection is None:
+            try:
+                self.connection = WebSocketConnection(
+                    self._hass, self._base_url, self._credentials
+                )
+                self._hass.async_create_task(self.connection.connect())
+
+            except WebSocketClosure:
+                _LOGGER.error("The websocket server has closed the connection.")
+
+            except WebSocketError:
+                _LOGGER.error("Websocket connection had an error.")
+
+            except Exception:
+                _LOGGER.exception(
+                    "An unexpected exception occurred on the websocket client."
+                )
         else:
-            if self.connection is None:
-                try:
-                    self.connection = WebSocketConnection(
-                        self._hass, self._base_url, self._credentials
-                    )
-                    self._hass.async_create_task(self.connection.connect())
-
-                except WebSocketClosure:
-                    _LOGGER.error("The websocket server has closed the connection.")
-
-                except WebSocketError:
-                    _LOGGER.error("Websocket connection had an error.")
-
-                except Exception:
-                    _LOGGER.exception(
-                        "An unexpected exception occurred on the websocket client."
-                    )
-            else:
+            isReady = self.connection.ready()
+            if isReady:
                 self.earthquakeData = self.connection.earthquakeData
                 self.tsunamiData = self.connection.tsunamiData
 
@@ -188,7 +189,8 @@ class tremUpdateCoordinator(DataUpdateCoordinator):
 
         if self.retry == 0:
             self.update_interval = self._update_interval
-        else:
+
+        if self.retry > 0:
             self.update_interval = timedelta(seconds=60)
 
             await self.switch_node()
@@ -203,19 +205,20 @@ class tremUpdateCoordinator(DataUpdateCoordinator):
             return None
 
         if self.plan == FREE_PLAN:
-            station, base_url = random.choice(list(BASE_URLS.items()))
-            _LOGGER.warning(
-                f"Switch Http(s) API {self.station} to {station}, Try to fetching data..."
-            )
+            tmpStation = list(BASE_URLS.items())
 
         if self.plan == SUBSCRIBE_PLAN:
-            station, base_url = random.choice(list(BASE_WS.items()))
-            _LOGGER.warning(
-                f"Switch WebSocket API {self.station} to {station}, Try to fetching data..."
-            )
+            tmpStation = list(BASE_WS.items())
 
+        # todo: 移除重複
+
+        station, base_url = random.choice(tmpStation)
         self.station = station
         self._base_url = base_url
+
+        _LOGGER.warning(
+            f"Switch Station {self.station} to {station}, Try to fetching data..."
+        )
 
         return station
 

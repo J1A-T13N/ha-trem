@@ -18,7 +18,7 @@ ISSUE_URL = f"{PROJECT_URL}issues"
 MIN_HA_MAJ_VER = 2024
 MIN_HA_MIN_VER = 3
 __min_ha_version__ = f"{MIN_HA_MAJ_VER}.{MIN_HA_MIN_VER}.0"
-__version__ = "1.0.7"
+__version__ = "1.0.8"
 
 # General sensor attributes
 ATTRIBUTION = "Powered by ExpTech Studio"
@@ -83,7 +83,7 @@ BASE_URLS = {
     "taipei_2": "https://lb-3.exptech.com.tw",
     "pingtung_2": "https://lb-4.exptech.com.tw",
 }
-REQUEST_TIMEOUT = 10  # seconds
+REQUEST_TIMEOUT = 30  # seconds
 
 # Websocket
 BASE_WS = {
