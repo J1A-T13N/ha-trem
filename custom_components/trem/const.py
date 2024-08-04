@@ -4,10 +4,11 @@ from datetime import timedelta
 
 # Initialize
 DEFAULT_NAME = "TREM"
-MONITOR_ICON = "mdi:chart-timeline-variant"
+DEFAULT_ICON = "mdi:checkbox-blank-outline"
+MONITOR_ICON = "mdi:monitor-eye"
 TSUNAMI_ICON = "mdi:tsunami"
 DOMAIN = "trem"
-PLATFORMS = ["image", "sensor"]
+PLATFORMS = ["binary_sensor", "image", "sensor"]
 
 # Proj
 CLIENT_NAME = "TREM-HA"
@@ -18,7 +19,21 @@ ISSUE_URL = f"{PROJECT_URL}issues"
 MIN_HA_MAJ_VER = 2024
 MIN_HA_MIN_VER = 3
 __min_ha_version__ = f"{MIN_HA_MAJ_VER}.{MIN_HA_MIN_VER}.0"
-__version__ = "1.0.7"
+__version__ = "1.0.8"
+
+# Earthquake Icon
+EARTHQUAKE_ICON = {
+    0: "mdi:numeric-0-box-outline",
+    1: "mdi:numeric-1-box-outline",
+    2: "mdi:numeric-2-box-outline",
+    3: "mdi:numeric-3-box-outline",
+    4: "mdi:numeric-4-box-outline",
+    5: "mdi:numeric-5-box-outline",
+    6: "mdi:numeric-5-box-multiple-outline",
+    7: "mdi:numeric-6-box-outline",
+    8: "mdi:numeric-6-box-multiple-outline",
+    9: "mdi:numeric-7-box-outline",
+}
 
 # General sensor attributes
 ATTRIBUTION = "Powered by ExpTech Studio"
@@ -83,7 +98,7 @@ BASE_URLS = {
     "taipei_2": "https://lb-3.exptech.com.tw",
     "pingtung_2": "https://lb-4.exptech.com.tw",
 }
-REQUEST_TIMEOUT = 10  # seconds
+REQUEST_TIMEOUT = 30  # seconds
 
 # Websocket
 BASE_WS = {
